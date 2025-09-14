@@ -3,30 +3,32 @@ export interface Post {
   user_id: string
   content: string
   media_ipfs: string[] | null
-  game_category: GameCategory
+  game_category: string
   likes_count: number
   donations_count: number
   comments_count: number
   created_at: string
   updated_at: string
-  user: {
+  user?: {
     id: string
     username: string | null
     display_name: string | null
     avatar_ipfs: string | null
+    is_verified?: boolean
   }
   is_liked_by_user?: boolean
+  user_has_liked?: boolean
 }
 
 export interface CreatePostData {
   content: string
   media_ipfs?: string[]
-  game_category: GameCategory
+  game_category: string
 }
 
 export interface UpdatePostData {
   content?: string
-  game_category?: GameCategory
+  game_category?: string
 }
 
 export interface PostWithDetails extends Post {
@@ -37,8 +39,8 @@ export interface PostWithDetails extends Post {
     avatar_ipfs: string | null
     followers_count: number
   }
-  recent_donations?: Donation[]
-  recent_likes?: Like[]
+  recent_donations?: any[]
+  recent_likes?: any[]
 }
 
 export enum GameCategory {
@@ -54,9 +56,10 @@ export enum GameCategory {
 export interface MediaUpload {
   file: File
   preview: string
-  type: 'image' | 'video'
+  type: string
   ipfs_hash?: string
   upload_status: 'pending' | 'uploading' | 'success' | 'error'
+  uploading?: boolean
 }
 
 export interface FeedPost extends Post {

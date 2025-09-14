@@ -3,6 +3,7 @@
 import React from 'react'
 import { useRequireWallet } from '@/contexts/Web3Context'
 import { WalletConnect } from './WalletConnect'
+import { Loading } from '@/components/ui/Loading'
 import { Loader2 } from 'lucide-react'
 
 interface WalletGuardProps {
@@ -26,7 +27,7 @@ export function WalletGuard({
   // Show wallet connection if needed
   if (needsConnection || needsNetworkSwitch) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background-primary flex items-center justify-center p-4">
         {fallback || <WalletConnect />}
       </div>
     )
@@ -39,11 +40,12 @@ export function WalletGuard({
 
   // Default loading state
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="flex items-center gap-2 text-white">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span>Initializing...</span>
-      </div>
+    <div className="min-h-screen bg-background-primary flex items-center justify-center">
+      <Loading
+        size="lg"
+        text="Initializing wallet connection..."
+        className="text-text-primary"
+      />
     </div>
   )
 }

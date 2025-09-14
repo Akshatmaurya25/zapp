@@ -6,9 +6,17 @@ import { somniaMainnet, somniaTestnet } from '@/constants/networks'
 export const wagmiConfig = createConfig({
   chains: [somniaMainnet, somniaTestnet],
   connectors: [
-    injected(),
+    injected({ 
+      target: 'metaMask',
+      shimDisconnect: true,
+    }),
+    injected({
+      target: 'browserExtension',
+      shimDisconnect: true,
+    }),
     walletConnect({ 
-      projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'your-project-id'
+      projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'your-project-id',
+      showQrModal: true,
     }),
     coinbaseWallet({ 
       appName: 'Zapp - Next Gen Social Platform',
@@ -19,41 +27,56 @@ export const wagmiConfig = createConfig({
     [somniaMainnet.id]: http(),
     [somniaTestnet.id]: http(),
   },
+  ssr: true,
+  multiInjectedProviderDiscovery: false,
 })
 
 // Network switching utility
-export const switchToSomniaNetwork = async (isTestnet = false) => {
+export const switchToSomniaNetwork = async (isTestnet = true) => {
   try {
     const networkParams = {
-      chainId: isTestnet ? '0xc478' : '0x13a7', // 50312 : 5031
-      chainName: isTestnet ? 'Somnia Shannon Testnet' : 'Somnia Mainnet',
+      chainId: isTestnet ? '0xc488' : '0x13a7', // 50312 (0xc488) : 5031 (0x13a7)
+      chainName: isTestnet ? 'Somnia Testnet' : 'Somnia Mainnet',
       nativeCurrency: {
         name: isTestnet ? 'STT' : 'SOMI',
         symbol: isTestnet ? 'STT' : 'SOMI',
         decimals: 18,
       },
       rpcUrls: [
-        isTestnet 
-          ? 'https://dream-rpc.somnia.network/' 
+        isTestnet
+          ? 'https://dream-rpc.somnia.network/'
           : 'https://api.infra.mainnet.somnia.network/'
       ],
       blockExplorerUrls: [
-        isTestnet 
-          ? 'https://shannon-explorer.somnia.network/' 
+        isTestnet
+          ? 'https://shannon-explorer.somnia.network/'
           : 'https://explorer.somnia.network'
       ],
     }
 
     if (typeof window !== 'undefined' && window.ethereum) {
-      await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [networkParams],
-      })
-      return true
+      try {
+        // Try to switch to the network first
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: networkParams.chainId }],
+        })
+        return true
+      } catch (switchError: any) {
+        // If the network doesn't exist in the wallet, add it
+        if (switchError.code === 4902 || switchError.code === -32603) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [networkParams],
+          })
+          return true
+        }
+        throw switchError
+      }
     }
     return false
   } catch (error) {
-    console.error('Failed to switch network:', error)
+    console.error('Failed to switch/add network:', error)
     return false
   }
 }

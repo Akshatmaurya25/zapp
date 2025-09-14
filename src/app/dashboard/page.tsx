@@ -1,149 +1,152 @@
 'use client'
 
-import { WalletGuard } from '@/components/auth/WalletGuard'
-import { useWallet } from '@/hooks/useWallet'
-import { formatAddress } from '@/lib/web3'
-import { Button } from '@/components/ui/Button'
+import { DashboardLayout } from '@/components/layout/AppLayout'
+import { useUser } from '@/contexts/UserContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Wallet, Settings, User, MessageSquare, Trophy } from 'lucide-react'
+import { StatsCard } from '@/components/dashboard/StatsCard'
+import { QuickActions } from '@/components/dashboard/QuickActions'
+import { PostFeed } from '@/components/post'
+import { Container, GridContainer, Section, Stack } from '@/components/ui/Container'
+import {
+  MessageSquare,
+  Heart,
+  Trophy,
+  Users,
+  Coins,
+  TrendingUp,
+  Zap,
+  Sparkles
+} from 'lucide-react'
 
 function DashboardContent() {
-  const { address, disconnectWallet, chain } = useWallet()
+  const { user } = useUser()
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-white">Zapp</h1>
-              <div className="text-sm text-gray-400">
-                Next-gen social platform
+    <Stack gap="xl" className="animate-slideUp">
+      {/* Welcome Hero Section */}
+      <Section spacing="lg" className="text-center">
+        <Stack gap="lg" align="center">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background-elevated rounded-full border border-border-primary">
+              <Sparkles className="h-4 w-4 text-primary-500" />
+              <span className="text-text-secondary text-sm font-medium">
+                Web3 Gaming Social Platform
+              </span>
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-bold text-gradient leading-tight">
+              Welcome back{user?.display_name ? `, ${user.display_name}` : ''}!
+            </h1>
+
+            <p className="text-text-tertiary text-lg md:text-xl max-w-3xl leading-relaxed">
+              Ready to dominate the gaming social space? Share your victories, connect with legends, and earn your place in Web3 gaming history.
+            </p>
+          </div>
+
+          {/* Network Status Badge */}
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-success-500/10 border border-success-500/20 rounded-full">
+            <div className="relative">
+              <div className="w-2 h-2 bg-success-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-success-400 rounded-full absolute top-0 left-0 animate-ping"></div>
+            </div>
+            <span className="text-success-400 font-medium">Connected to Somnia Network</span>
+            <Zap className="h-4 w-4 text-success-400" />
+          </div>
+        </Stack>
+      </Section>
+
+      {/* Stats Grid */}
+      <Section>
+        <GridContainer cols="4" gap="lg">
+          <StatsCard
+            title="Posts Created"
+            value={user?.posts_count || 0}
+            subtitle="Total content shared"
+            icon={MessageSquare}
+            color="blue"
+            trend={{ value: 12, label: "this week" }}
+          />
+          <StatsCard
+            title="Likes Received"
+            value={user?.total_likes_received || 0}
+            subtitle="Community appreciation"
+            icon={Heart}
+            color="red"
+            trend={{ value: 8, label: "this week" }}
+          />
+          <StatsCard
+            title="Achievements"
+            value={user?.achievements_count || 0}
+            subtitle="NFTs earned"
+            icon={Trophy}
+            color="yellow"
+          />
+          <StatsCard
+            title="SOMI Earned"
+            value={user?.total_donations_received || "0"}
+            subtitle="Token rewards"
+            icon={Coins}
+            color="green"
+            trend={{ value: 25, label: "this month" }}
+          />
+        </GridContainer>
+      </Section>
+
+      {/* Quick Actions */}
+      <Section>
+        <QuickActions />
+      </Section>
+
+      {/* Network Stats */}
+      <Section>
+        <Card variant="elevated" hover="glow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-secondary-500/10 rounded-lg">
+                <Users className="h-5 w-5 text-secondary-500" />
+              </div>
+              Your Network
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GridContainer cols="2" gap="lg" className="text-center">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold text-gradient">
+                  {user?.followers_count || 0}
+                </div>
+                <div className="text-text-tertiary text-sm">Followers</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold text-gradient">
+                  {user?.following_count || 0}
+                </div>
+                <div className="text-text-tertiary text-sm">Following</div>
+              </div>
+            </GridContainer>
+
+            <div className="mt-6 pt-6 border-t border-border-primary text-center">
+              <p className="text-text-muted text-xs mb-2">Network Growth</p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-success-500/10 rounded-full">
+                <TrendingUp className="h-4 w-4 text-success-400" />
+                <span className="text-sm text-success-400 font-medium">+15% this week</span>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <Wallet className="h-4 w-4" />
-                {formatAddress(address || '')}
-              </div>
-              <div className="text-xs text-gray-500">
-                {chain?.name}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={disconnectWallet}
-              >
-                Disconnect
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+          </CardContent>
+        </Card>
+      </Section>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Welcome Card */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Welcome to Zapp!</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-400">
-                  Your wallet is connected and you're ready to start using Zapp. 
-                  This is a next-generation social platform for the Somnia ecosystem.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm">
-                    <MessageSquare className="h-4 w-4" />
-                    Create Post
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <User className="h-4 w-4" />
-                    Setup Profile
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Trophy className="h-4 w-4" />
-                    View Achievements
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Account Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Info</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <div className="text-sm text-gray-400">Wallet Address</div>
-                <div className="font-mono text-xs">
-                  {formatAddress(address || '', 6)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">Network</div>
-                <div className="text-sm">{chain?.name}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-400">Status</div>
-                <div className="text-sm text-green-400">Connected</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-white">Platform Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="hover:bg-gray-800 transition-colors">
-              <CardContent className="p-4 text-center">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-blue-400" />
-                <h3 className="font-medium mb-1">Social Posts</h3>
-                <p className="text-sm text-gray-400">Share gameplay and connect with gamers</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="hover:bg-gray-800 transition-colors">
-              <CardContent className="p-4 text-center">
-                <Trophy className="h-8 w-8 mx-auto mb-2 text-yellow-400" />
-                <h3 className="font-medium mb-1">NFT Achievements</h3>
-                <p className="text-sm text-gray-400">Earn NFTs for milestones</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="hover:bg-gray-800 transition-colors">
-              <CardContent className="p-4 text-center">
-                <Wallet className="h-8 w-8 mx-auto mb-2 text-green-400" />
-                <h3 className="font-medium mb-1">Donations</h3>
-                <p className="text-sm text-gray-400">Support creators with SOMI</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="hover:bg-gray-800 transition-colors">
-              <CardContent className="p-4 text-center">
-                <Settings className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <h3 className="font-medium mb-1">Coming Soon</h3>
-                <p className="text-sm text-gray-400">More features in development</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Post Feed */}
+      <Section>
+        <PostFeed showCreatePost={true} />
+      </Section>
+    </Stack>
   )
 }
 
 export default function DashboardPage() {
   return (
-    <WalletGuard>
+    <DashboardLayout>
       <DashboardContent />
-    </WalletGuard>
+    </DashboardLayout>
   )
 }

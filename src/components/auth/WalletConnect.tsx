@@ -2,15 +2,17 @@
 
 import React from 'react'
 import { useWallet } from '@/hooks/useWallet'
+import { WelcomeLanding } from './WelcomeLanding'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Wallet, AlertCircle, Loader2 } from 'lucide-react'
 
 interface WalletConnectProps {
   onConnect?: () => void
+  showLanding?: boolean
 }
 
-export function WalletConnect({ onConnect }: WalletConnectProps) {
+export function WalletConnect({ onConnect, showLanding = true }: WalletConnectProps) {
   const { 
     connectWallet, 
     isConnecting, 
@@ -18,8 +20,14 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
     error,
     switchToSomnia,
     isOnSomnia,
-    isConnected
+    isConnected,
+    connectionRejected
   } = useWallet()
+
+  // Show welcome landing page by default
+  if (showLanding && !isConnected) {
+    return <WelcomeLanding onConnect={onConnect} />
+  }
 
   const handleConnect = async (connectorId?: string) => {
     try {

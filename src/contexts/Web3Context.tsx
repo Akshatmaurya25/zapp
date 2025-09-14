@@ -10,8 +10,10 @@ import { useAccount, useChainId } from 'wagmi'
 interface Web3ContextType {
   connection: WalletConnection
   isOnSomnia: boolean
+  connectionRejected: boolean
   switchNetwork: (testnet?: boolean) => Promise<boolean>
   disconnect: () => void
+  resetConnectionState: () => void
 }
 
 const Web3Context = createContext<Web3ContextType | null>(null)
@@ -26,11 +28,18 @@ const queryClient = new QueryClient({
   },
 })
 
+// Wagmi config with disabled auto-reconnect
+const wagmiConfigWithoutAutoReconnect = {
+  ...wagmiConfig,
+  autoConnect: false,
+}
+
 // Inner component that uses hooks
 function Web3ProviderInner({ children }: { children: React.ReactNode }) {
   const { address, isConnected, isConnecting, isReconnecting } = useAccount()
   const chainId = useChainId()
   const [isOnSomnia, setIsOnSomnia] = useState(false)
+  const [connectionRejected, setConnectionRejected] = useState(false)
 
   const connection: WalletConnection = {
     address,
@@ -56,11 +65,31 @@ function Web3ProviderInner({ children }: { children: React.ReactNode }) {
     // Wagmi disconnect will be handled by the hook
   }
 
+  const resetConnectionState = () => {
+    setConnectionRejected(false)
+  }
+
+  // Track connection rejections
+  useEffect(() => {
+    if (!isConnected && !isConnecting && !isReconnecting) {
+      // User might have rejected connection
+      const hasTriedConnection = localStorage.getItem('wallet-connection-attempted')
+      if (hasTriedConnection) {
+        setConnectionRejected(true)
+      }
+    } else if (isConnected) {
+      setConnectionRejected(false)
+      localStorage.removeItem('wallet-connection-attempted')
+    }
+  }, [isConnected, isConnecting, isReconnecting])
+
   const contextValue: Web3ContextType = {
     connection,
     isOnSomnia,
+    connectionRejected,
     switchNetwork,
     disconnect,
+    resetConnectionState,
   }
 
   return (
