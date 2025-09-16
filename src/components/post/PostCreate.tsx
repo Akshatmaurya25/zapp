@@ -169,7 +169,7 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
                         <img
                           src={file.preview || (file.ipfs_hash ? `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}` : '')}
                           alt={`Upload ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain bg-gray-800"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

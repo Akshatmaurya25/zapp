@@ -7,6 +7,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { useUser } from '@/contexts/UserContext'
 import { Button } from '@/components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { formatAddress } from '@/lib/web3'
 import { 
   Zap, 
@@ -80,18 +81,15 @@ export function Navigation() {
           {/* Right Side */}
           <div className="flex items-center gap-4">
             {/* Create Post Button */}
-            <Button className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Post
-            </Button>
+            <Link href="/post/create">
+              <Button className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
+                <Plus className="h-4 w-4 mr-2" />
+                Post
+              </Button>
+            </Link>
 
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
-            </Button>
+            <NotificationBell />
 
             {/* User Menu */}
             {user && (
@@ -181,10 +179,12 @@ export function Navigation() {
               })}
               
               <div className="border-t border-border-secondary pt-3 mt-3">
-                <Button className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Post
-                </Button>
+                <Link href="/post/create" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Post
+                  </Button>
+                </Link>
               </div>
 
               {user && (

@@ -1,12 +1,13 @@
 'use client'
 
-import { useConnect, useDisconnect, useAccount } from 'wagmi'
+import { useConnect, useDisconnect, useAccount, useSendTransaction } from 'wagmi'
 import { useWeb3 } from '@/contexts/Web3Context'
 import { useEffect, useState } from 'react'
 
 export function useWallet() {
   const { connect, connectors, isPending, error } = useConnect()
   const { disconnect } = useDisconnect()
+  const { sendTransaction } = useSendTransaction()
   const { connection, isOnSomnia, switchNetwork, connectionRejected, resetConnectionState } = useWeb3()
   const [isConnecting, setIsConnecting] = useState(false)
 
@@ -74,20 +75,21 @@ export function useWallet() {
     isOnSomnia,
     chain: connection.chain,
     connectionRejected,
-    
+
     // Actions
     connectWallet,
     disconnectWallet,
     switchToSomnia,
     resetConnectionState,
-    
+    sendTransaction,
+
     // Available connectors
     connectors: connectors.map(connector => ({
       id: connector.id,
       name: connector.name,
       icon: connector.icon,
     })),
-    
+
     // Error state
     error: error?.message,
   }

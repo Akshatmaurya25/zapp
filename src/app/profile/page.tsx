@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProfileSetup } from '@/components/profile/ProfileSetup'
+import { AchievementGrid } from '@/components/achievements/AchievementGrid'
 import { useUser } from '@/contexts/UserContext'
 import { useWallet } from '@/hooks/useWallet'
 import { useFaucet, useTestnetBalance } from '@/hooks/useFaucet'
@@ -170,6 +171,7 @@ function TestnetFaucetCard() {
 function ProfileContent() {
   const { user } = useUser()
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'profile' | 'achievements'>('profile')
 
   if (!user) return null
 
@@ -184,62 +186,84 @@ function ProfileContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-          Your Profile
-        </h1>
-        <Button
-          onClick={() => setIsEditing(true)}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Edit3 className="h-4 w-4 mr-2" />
-          Edit Profile
-        </Button>
+      {/* Enhanced Header */}
+      <div className="relative mb-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 rounded-3xl blur-3xl" />
+        <div className="relative bg-glass-card rounded-3xl p-8 border border-primary-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl shadow-glow">
+                <User className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gradient animate-gradient-shift">
+                  Your Profile
+                </h1>
+                <p className="text-text-tertiary mt-1">Manage your gaming identity</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setIsEditing(true)}
+              className="bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 shadow-glow hover-lift"
+            >
+              <Edit3 className="h-4 w-4 mr-2" />
+              Edit Profile
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="cyber-card hover-lift">
             <CardContent className="p-6">
               <div className="text-center space-y-4">
-                <Avatar className="h-24 w-24 mx-auto">
-                  {user.avatar_ipfs ? (
-                    <AvatarImage
-                      src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`}
-                      alt={user.display_name || user.username || 'User avatar'}
-                    />
-                  ) : (
-                    <AvatarFallback>
-                      <User className="h-12 w-12" />
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-
-                <div className="space-y-2">
-                  <h2 className="text-xl font-bold text-white">
-                    {user.display_name}
-                    {user.is_verified && (
-                      <span className="ml-2 text-blue-400">✓</span>
+                <div className="relative inline-block">
+                  <Avatar className="h-24 w-24 mx-auto border-2 border-primary-500/30 shadow-glow">
+                    {user.avatar_ipfs ? (
+                      <AvatarImage
+                        src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`}
+                        alt={user.display_name || user.username || 'User avatar'}
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-gradient-to-r from-primary-500 to-secondary-500">
+                        <User className="h-12 w-12 text-white" />
+                      </AvatarFallback>
                     )}
-                  </h2>
-                  <p className="text-gray-400">@{user.username}</p>
-                  {user.bio && (
-                    <p className="text-gray-300 text-sm">{user.bio}</p>
+                  </Avatar>
+                  {user.is_verified && (
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-gray-900">
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-700">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-bold text-gradient flex items-center justify-center gap-2">
+                      {user.display_name}
+                    </h2>
+                    <p className="text-primary-400 font-medium">@{user.username}</p>
+                  </div>
+                  {user.bio && (
+                    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/50">
+                      <p className="text-gray-300 text-sm leading-relaxed">{user.bio}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-700/50">
+                  <div className="text-center p-3 bg-primary-500/5 rounded-lg border border-primary-500/10">
+                    <div className="text-2xl font-bold text-gradient">
                       {user.followers_count}
                     </div>
-                    <div className="text-sm text-gray-400">Followers</div>
+                    <div className="text-sm text-text-tertiary">Followers</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-white">
+                  <div className="text-center p-3 bg-secondary-500/5 rounded-lg border border-secondary-500/10">
+                    <div className="text-2xl font-bold text-gradient">
                       {user.following_count}
                     </div>
-                    <div className="text-sm text-gray-400">Following</div>
+                    <div className="text-sm text-text-tertiary">Following</div>
                   </div>
                 </div>
               </div>

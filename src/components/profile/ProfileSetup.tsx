@@ -20,8 +20,8 @@ interface ProfileSetupProps {
 
 export function ProfileSetup({ onComplete, existingUser = false }: ProfileSetupProps) {
   const { address } = useWallet()
-  const { createProfile, updateProfile, validateUsername, error, clearError, isBusy } = useUserProfile()
-  
+  const { user, createProfile, updateProfile, validateUsername, error, clearError, isBusy } = useUserProfile()
+
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -31,6 +31,42 @@ export function ProfileSetup({ onComplete, existingUser = false }: ProfileSetupP
     twitterHandle: '',
     discordHandle: ''
   })
+
+  // Store original username to allow keeping existing username
+  const [originalUsername, setOriginalUsername] = useState('')
+
+  // Pre-populate form data when editing existing user
+  useEffect(() => {
+    if (existingUser && user) {
+      const userUsername = user.username || ''
+      setOriginalUsername(userUsername)
+
+      setFormData({
+        username: userUsername,
+        displayName: user.display_name || '',
+        bio: user.bio || '',
+        avatarIpfs: user.avatar_ipfs || '',
+        websiteUrl: user.website_url || '',
+        twitterHandle: user.twitter_handle || '',
+        discordHandle: user.discord_handle || ''
+      })
+
+      // Set initial validation state for existing data
+      if (user.username) {
+        setValidation(prev => ({
+          ...prev,
+          username: { isValid: true, isChecking: false, message: 'Current username' }
+        }))
+      }
+
+      if (user.display_name) {
+        setValidation(prev => ({
+          ...prev,
+          displayName: { isValid: true, message: '' }
+        }))
+      }
+    }
+  }, [existingUser, user])
   
   const [validation, setValidation] = useState({
     username: { isValid: false, isChecking: false, message: '' },
@@ -82,10 +118,25 @@ export function ProfileSetup({ onComplete, existingUser = false }: ProfileSetupP
     const timeoutId = setTimeout(async () => {
       const currentUsername = formData.username
       const requestId = ++validationRequestId.current
-      
+
       try {
+        // If editing and username hasn't changed from original, it's valid
+        if (existingUser && currentUsername === originalUsername) {
+          if (requestId === validationRequestId.current && currentUsername === formData.username) {
+            setValidation(prev => ({
+              ...prev,
+              username: {
+                isValid: true,
+                isChecking: false,
+                message: 'Current username'
+              }
+            }))
+          }
+          return
+        }
+
         const isValid = await validateUsernameStable(currentUsername)
-        
+
         // Only update if this is the latest validation request and username hasn't changed
         if (requestId === validationRequestId.current && currentUsername === formData.username) {
           setValidation(prev => ({
@@ -239,6 +290,11 @@ export function ProfileSetup({ onComplete, existingUser = false }: ProfileSetupP
               <label htmlFor="username" className="text-base font-semibold text-white flex items-center gap-2">
                 Username
                 <span className="text-red-400">*</span>
+                {existingUser && (
+                  <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-md">
+                    Username changes may affect your profile links
+                  </span>
+                )}
               </label>
               <div className="relative">
                 <Input

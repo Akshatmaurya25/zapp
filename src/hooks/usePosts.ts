@@ -18,7 +18,7 @@ export function usePosts(params?: QueryParams) {
     error,
     refetch
   } = useQuery({
-    queryKey: ['posts', params],
+    queryKey: ['posts', params, user?.id],
     queryFn: async () => {
       let query = supabase
         .from('posts')
@@ -67,7 +67,30 @@ export function usePosts(params?: QueryParams) {
         throw new Error(`Failed to fetch posts: ${error.message}`)
       }
 
-      return data as Post[]
+      // If no user logged in, return posts without like status
+      if (!user || !data) {
+        return (data || []) as Post[]
+      }
+
+      // Get post IDs
+      const postIds = data.map(post => post.id)
+
+      // Fetch likes for these posts by current user
+      const { data: userLikes } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .in('post_id', postIds)
+
+      const likedPostIds = new Set(userLikes?.map(like => like.post_id) || [])
+
+      // Add user_has_liked flag to each post
+      const postsWithLikeStatus = data.map(post => ({
+        ...post,
+        user_has_liked: likedPostIds.has(post.id)
+      }))
+
+      return postsWithLikeStatus as Post[]
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
@@ -167,50 +190,84 @@ export function usePosts(params?: QueryParams) {
 
   // Like/Unlike post mutation
   const toggleLikeMutation = useMutation({
-    mutationFn: async (postId: string): Promise<{ liked: boolean }> => {
+    mutationFn: async (postId: string): Promise<{ liked: boolean; likesCount: number }> => {
       if (!user) {
         throw new Error('User must be logged in to like posts')
       }
 
-      // Check if already liked
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .single()
+      // Use API route to bypass RLS
+      const response = await fetch('/api/likes/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          post_id: postId,
+        })
+      })
 
-      if (existingLike) {
-        // Remove like
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to toggle like')
+      }
 
-        if (error) {
-          throw new Error(`Failed to unlike post: ${error.message}`)
-        }
+      const data = await response.json()
+      return { liked: data.liked, likesCount: data.likesCount }
+    },
+    onMutate: async (postId: string) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['posts'] })
 
-        return { liked: false }
-      } else {
-        // Add like
-        const { error } = await supabase
-          .from('likes')
-          .insert([{
-            user_id: user.id,
-            post_id: postId,
-          }])
+      // Snapshot the previous value
+      const previousPosts = queryClient.getQueryData(['posts', params, user?.id])
 
-        if (error) {
-          throw new Error(`Failed to like post: ${error.message}`)
-        }
+      // Optimistically update the post
+      queryClient.setQueryData(['posts', params, user?.id], (old: Post[] | undefined) => {
+        if (!old) return old
 
-        return { liked: true }
+        return old.map(post => {
+          if (post.id === postId) {
+            const isCurrentlyLiked = post.user_has_liked
+            return {
+              ...post,
+              user_has_liked: !isCurrentlyLiked,
+              likes_count: isCurrentlyLiked ? post.likes_count - 1 : post.likes_count + 1
+            }
+          }
+          return post
+        })
+      })
+
+      // Return a context object with the snapshotted value
+      return { previousPosts }
+    },
+    onError: (err, postId, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousPosts) {
+        queryClient.setQueryData(['posts', params, user?.id], context.previousPosts)
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
+    onSettled: (data, error, postId) => {
+      // Always refetch after error or success to ensure we have the latest data
+      // But only for this specific post's data, not all posts
+      if (data) {
+        // Update the cache with the actual server response
+        queryClient.setQueryData(['posts', params, user?.id], (old: Post[] | undefined) => {
+          if (!old) return old
+
+          return old.map(post => {
+            if (post.id === postId) {
+              return {
+                ...post,
+                user_has_liked: data.liked,
+                likes_count: data.likesCount
+              }
+            }
+            return post
+          })
+        })
+      }
     },
   })
 

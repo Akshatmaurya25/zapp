@@ -24,30 +24,45 @@ function DashboardContent() {
   return (
     <Stack gap="xl" className="animate-slideUp">
       {/* Welcome Hero Section */}
-      <Section spacing="lg" className="text-center">
-        <Stack gap="lg" align="center">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background-elevated rounded-full border border-border-primary">
-              <Sparkles className="h-4 w-4 text-primary-500" />
-              <span className="text-text-secondary text-sm font-medium">
-                Web3 Gaming Social Platform
+      <Section spacing="lg" className="text-center relative">
+        {/* Background Effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-r from-secondary-500/15 to-success-500/15 rounded-full blur-3xl animate-glow-pulse delay-1000" />
+        </div>
+
+        <Stack gap="lg" align="center" className="relative z-10">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-glass-card rounded-full border border-primary-500/30 shadow-glow-sm">
+              <Sparkles className="h-4 w-4 text-primary-400 animate-spin-slow" />
+              <span className="text-primary-200 text-sm font-medium tracking-wide">
+                ⚡ Web3 Gaming Social Platform ⚡
               </span>
+              <div className="w-2 h-2 bg-success-400 rounded-full animate-pulse" />
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold text-gradient leading-tight">
-              Welcome back{user?.display_name ? `, ${user.display_name}` : ''}!
-            </h1>
+            <div className="space-y-4">
+              <h1 className="text-5xl md:text-7xl font-black text-gradient leading-tight animate-gradient-shift">
+                Welcome back{user?.display_name ? `, ${user.display_name}` : ''}!
+              </h1>
 
-            <p className="text-text-tertiary text-lg md:text-xl max-w-3xl leading-relaxed">
-              Ready to dominate the gaming social space? Share your victories, connect with legends, and earn your place in Web3 gaming history.
-            </p>
+              {/* Subtitle with enhanced styling */}
+              <div className="max-w-4xl mx-auto space-y-2">
+                <p className="text-gray-200 text-xl md:text-2xl font-semibold">
+                  Ready to dominate the gaming social space?
+                </p>
+                <p className="text-gray-400 text-lg md:text-xl leading-relaxed">
+                  Share your victories • Connect with legends • Earn your place in Web3 gaming history
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Network Status Badge */}
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-success-500/10 border border-success-500/20 rounded-full">
+          {/* Enhanced Network Status Badge */}
+          <div className="cyber-card inline-flex items-center gap-3 px-6 py-4 shadow-glow-sm hover-lift">
             <div className="relative">
-              <div className="w-2 h-2 bg-success-400 rounded-full"></div>
-              <div className="w-2 h-2 bg-success-400 rounded-full absolute top-0 left-0 animate-ping"></div>
+              <div className="w-3 h-3 bg-success-400 rounded-full shadow-glow-sm"></div>
+              <div className="w-3 h-3 bg-success-400 rounded-full absolute top-0 left-0 animate-ping"></div>
             </div>
             <span className="text-success-400 font-medium">Connected to Somnia Network</span>
             <Zap className="h-4 w-4 text-success-400" />

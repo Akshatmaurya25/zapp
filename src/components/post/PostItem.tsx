@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { FollowButton } from '@/components/ui/FollowButton'
+import { CommentModal } from './CommentModal'
+import { DonationModal } from './DonationModal'
+import { useToastHelpers } from '@/components/ui/Toast'
 import { cn, formatTimeAgo, formatNumber } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -23,7 +26,9 @@ import {
   Clock,
   Shield,
   Verified,
-  Copy
+  Copy,
+  Gift,
+  Coins
 } from 'lucide-react'
 import { Post } from '@/types'
 
@@ -38,7 +43,10 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
   const { user } = useUserProfile()
   const { toggleLike, isTogglingLike } = usePosts()
   const { toggleLike: toggleBlockchainLike } = usePostContract()
+  const { success } = useToastHelpers()
   const [showActions, setShowActions] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [showDonation, setShowDonation] = useState(false)
 
   const isOwner = user?.id === post.user_id
   const isLiked = post.user_has_liked || false
@@ -78,25 +86,38 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
   }
 
   const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: `Post by ${post.user?.display_name}`,
           text: post.content,
-          url: window.location.href
+          url: postUrl
         })
       } catch (error) {
         console.error('Failed to share:', error)
+        // Fallback to clipboard
+        handleCopyLinkDirectly()
       }
     } else {
       // Fallback: copy link to clipboard
-      try {
-        await navigator.clipboard.writeText(window.location.href)
-        // Could show a toast notification here
-      } catch (error) {
-        console.error('Failed to copy link:', error)
-      }
+      handleCopyLinkDirectly()
     }
+  }
+
+  const handleCopyLinkDirectly = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`
+    try {
+      await navigator.clipboard.writeText(postUrl)
+      success('Link copied!', 'Post link has been copied to your clipboard')
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+    }
+  }
+
+  const handleDonate = () => {
+    setShowDonation(true)
   }
 
   return (
@@ -183,7 +204,7 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
                 <div className="absolute right-0 top-8 z-10 bg-background-elevated border border-border-primary rounded-lg shadow-lg py-1 min-w-[160px]">
                   <button
                     onClick={() => {
-                      handleCopyLink()
+                      handleCopyLinkDirectly()
                       setShowActions(false)
                     }}
                     className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-background-tertiary flex items-center gap-2"
@@ -287,7 +308,7 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
                   <img
                     src={`https://gateway.pinata.cloud/ipfs/${hash}`}
                     alt={`Media ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg max-h-80"
+                    className="w-full h-full object-contain rounded-lg max-h-80 bg-gray-800"
                   />
 
                   {/* Overlay for +N more */}
@@ -329,7 +350,10 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
             </button>
 
             {/* Comment Button */}
-            <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
+            <button
+              onClick={() => setShowComments(true)}
+              className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors"
+            >
               <MessageCircle className="h-4 w-4" />
               <span className="text-sm">{post.comments_count || 0}</span>
             </button>
@@ -342,9 +366,34 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
               <Share className="h-4 w-4" />
               <span className="text-sm">Share</span>
             </button>
+
+            {/* Donate Button (only show if not owner) */}
+            {!isOwner && (
+              <button
+                onClick={handleDonate}
+                className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition-colors"
+              >
+                <Coins className="h-4 w-4" />
+                <span className="text-sm">Tip</span>
+              </button>
+            )}
           </div>
         </div>
       </CardContent>
+
+      {/* Comment Modal */}
+      <CommentModal
+        post={post}
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+      />
+
+      {/* Donation Modal */}
+      <DonationModal
+        post={post}
+        isOpen={showDonation}
+        onClose={() => setShowDonation(false)}
+      />
     </Card>
   )
 }

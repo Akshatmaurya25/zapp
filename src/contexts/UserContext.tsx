@@ -160,28 +160,37 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         throw new Error("No user to update");
       }
 
-      const { data, error } = await supabase
-        .from("users")
-        .update({
-          username: userData.username?.toLowerCase(),
-          display_name: userData.display_name,
-          bio: userData.bio,
-          avatar_ipfs: userData.avatar_ipfs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id)
-        .select()
-        .single();
+      console.log('Updating user with data:', userData);
+      console.log('Current user ID:', user.id);
 
-      if (error) {
-        throw new Error(`Failed to update user: ${error.message}`);
+      // Use API route to update user profile
+      const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          ...userData
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update user profile')
       }
 
-      return data as User;
+      const data = await response.json()
+      console.log('Successfully updated user via API:', data.user);
+      return data.user as User;
     },
     onSuccess: (updatedUser) => {
       // Update the cache with the updated user
       queryClient.setQueryData(["user", address], updatedUser);
+      console.log('User cache updated successfully');
+    },
+    onError: (error) => {
+      console.error('Update user mutation error:', error);
     },
   });
 
