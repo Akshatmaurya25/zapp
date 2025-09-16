@@ -1,60 +1,63 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { useToastHelpers } from '@/components/ui/Toast'
-import { switchToSomniaNetwork } from '@/lib/web3'
-import { Plus, ExternalLink, Loader2 } from 'lucide-react'
+import React, { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useToastHelpers } from "@/components/ui/Toast";
+import { switchToSomniaNetwork } from "@/lib/web3";
+import { Plus, ExternalLink, Loader2 } from "lucide-react";
 
 interface AddNetworkButtonProps {
-  variant?: 'default' | 'ghost' | 'outline'
-  size?: 'sm' | 'md' | 'lg'
-  showIcon?: boolean
-  className?: string
-  children?: React.ReactNode
+  variant?: "default" | "ghost" | "outline";
+  size?: "default" | "sm" | "lg" | "xl" | "icon" | "icon-sm" | "icon-lg";
+  showIcon?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export function AddNetworkButton({
-  variant = 'outline',
-  size = 'sm',
+  variant = "outline",
+  size = "sm",
   showIcon = true,
   className,
-  children
+  children,
 }: AddNetworkButtonProps) {
-  const [isAdding, setIsAdding] = useState(false)
-  const { success, error } = useToastHelpers()
+  const [isAdding, setIsAdding] = useState(false);
+  const { success, error } = useToastHelpers();
 
   const handleAddNetwork = async () => {
-    setIsAdding(true)
+    setIsAdding(true);
 
     try {
-      const result = await switchToSomniaNetwork(true) // Add testnet by default
+      const result = await switchToSomniaNetwork(true); // Add testnet by default
 
       if (result) {
         success(
-          'Network Added Successfully!',
-          'Somnia Testnet has been added to your wallet'
-        )
+          "Network Added Successfully!",
+          "Somnia Testnet has been added to your wallet"
+        );
       } else {
-        throw new Error('Failed to add network - wallet not available')
+        throw new Error("Failed to add network - wallet not available");
       }
     } catch (err: any) {
-      console.error('Failed to add network:', err)
+      console.error("Failed to add network:", err);
 
       if (err.code === 4001) {
-        error('Request Rejected', 'You rejected the network addition request')
+        error("Request Rejected", "You rejected the network addition request");
       } else if (err.code === -32002) {
-        error('Request Pending', 'Please check your wallet for pending requests')
+        error(
+          "Request Pending",
+          "Please check your wallet for pending requests"
+        );
       } else {
         error(
-          'Failed to Add Network',
-          'Please add Somnia Testnet manually to your wallet'
-        )
+          "Failed to Add Network",
+          "Please add Somnia Testnet manually to your wallet"
+        );
       }
     } finally {
-      setIsAdding(false)
+      setIsAdding(false);
     }
-  }
+  };
 
   return (
     <Button
@@ -69,20 +72,24 @@ export function AddNetworkButton({
       ) : showIcon ? (
         <Plus className="h-4 w-4 mr-2" />
       ) : null}
-      {children || (isAdding ? 'Adding Network...' : 'Add to MetaMask')}
+      {children || (isAdding ? "Adding Network..." : "Add to MetaMask")}
     </Button>
-  )
+  );
 }
 
 interface NetworkInfoCardProps {
-  className?: string
+  className?: string;
 }
 
 export function NetworkInfoCard({ className }: NetworkInfoCardProps) {
   return (
-    <div className={`p-4 bg-background-elevated rounded-lg border border-border-primary space-y-3 ${className}`}>
+    <div
+      className={`p-4 bg-background-elevated rounded-lg border border-border-primary space-y-3 ${className}`}
+    >
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-text-primary">Somnia Testnet</h3>
+        <h3 className="text-lg font-semibold text-text-primary">
+          Somnia Testnet
+        </h3>
         <AddNetworkButton />
       </div>
 
@@ -124,5 +131,5 @@ export function NetworkInfoCard({ className }: NetworkInfoCardProps) {
         </p>
       </div>
     </div>
-  )
+  );
 }

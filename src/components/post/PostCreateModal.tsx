@@ -1,19 +1,30 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { useUserProfile } from '@/hooks/useUserProfile'
-import { usePostContract } from '@/hooks/usePostContract'
-import { useWeb3, useRequireWallet } from '@/contexts/Web3Context'
-import { useConnect, useAccount } from 'wagmi'
-import { Button } from '@/components/ui/Button'
-import { Textarea } from '@/components/ui/Textarea'
-import { MediaUpload } from '@/components/ui/MediaUpload'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
-import { Badge } from '@/components/ui/Badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
-import { useToastHelpers } from '@/components/ui/Toast'
-import { cn } from '@/lib/utils'
+import React, { useState, useEffect } from "react";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { usePostContract } from "@/hooks/usePostContract";
+import { useWeb3, useRequireWallet } from "@/contexts/Web3Context";
+import { useConnect, useAccount } from "wagmi";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Textarea";
+import { MediaUpload } from "@/components/ui/MediaUpload";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/Dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { useToastHelpers } from "@/components/ui/Toast";
+import { cn } from "@/lib/utils";
 import {
   Send,
   Image,
@@ -28,104 +39,144 @@ import {
   Coins,
   User,
   Sparkles,
-  Wallet
-} from 'lucide-react'
-import { MediaUpload as MediaUploadType } from '@/types'
+  Wallet,
+} from "lucide-react";
+import { MediaUpload as MediaUploadType } from "@/types";
 
 interface PostCreateModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
 const gameCategories = [
-  { value: 'general', label: 'General Gaming', icon: '🎮', color: 'from-blue-500 to-cyan-500' },
-  { value: 'valorant', label: 'Valorant', icon: '🎯', color: 'from-red-500 to-pink-500' },
-  { value: 'pubg', label: 'PUBG', icon: '🏆', color: 'from-orange-500 to-yellow-500' },
-  { value: 'fortnite', label: 'Fortnite', icon: '⚡', color: 'from-purple-500 to-blue-500' },
-  { value: 'league', label: 'League of Legends', icon: '⚔️', color: 'from-indigo-500 to-purple-500' },
-  { value: 'metaverse', label: 'Metaverse Games', icon: '🌐', color: 'from-green-500 to-teal-500' },
-  { value: 'other', label: 'Other', icon: '🎲', color: 'from-gray-500 to-slate-500' }
-]
+  {
+    value: "general",
+    label: "General Gaming",
+    icon: "🎮",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    value: "valorant",
+    label: "Valorant",
+    icon: "🎯",
+    color: "from-red-500 to-pink-500",
+  },
+  {
+    value: "pubg",
+    label: "PUBG",
+    icon: "🏆",
+    color: "from-orange-500 to-yellow-500",
+  },
+  {
+    value: "fortnite",
+    label: "Fortnite",
+    icon: "⚡",
+    color: "from-purple-500 to-blue-500",
+  },
+  {
+    value: "league",
+    label: "League of Legends",
+    icon: "⚔️",
+    color: "from-indigo-500 to-purple-500",
+  },
+  {
+    value: "metaverse",
+    label: "Metaverse Games",
+    icon: "🌐",
+    color: "from-green-500 to-teal-500",
+  },
+  {
+    value: "other",
+    label: "Other",
+    icon: "🎲",
+    color: "from-gray-500 to-slate-500",
+  },
+];
 
-type PostMode = 'free' | 'blockchain'
+type PostMode = "free" | "blockchain";
 
-export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalProps) {
-  const { user } = useUserProfile()
+export function PostCreateModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: PostCreateModalProps) {
+  const { user } = useUserProfile();
   // Removed off-chain posting - blockchain only
   const {
     createPost: createBlockchainPost,
     isCreating: isCreatingBlockchain,
     postFee,
-    isContractAvailable
-  } = usePostContract()
-  const { success, error: showError } = useToastHelpers()
-  const { connection, isOnSomnia, switchNetwork } = useWeb3()
-  const { needsConnection, needsNetworkSwitch, isReady } = useRequireWallet()
-  const { connect, connectors } = useConnect()
+    isContractAvailable,
+  } = usePostContract();
+  const { success, error: showError } = useToastHelpers();
+  const { connection, isOnSomnia, switchNetwork } = useWeb3();
+  const { needsConnection, needsNetworkSwitch, isReady } = useRequireWallet();
+  const { connect, connectors } = useConnect();
 
-  const [content, setContent] = useState('')
-  const [gameCategory, setGameCategory] = useState<string>('general')
-  const [mediaFiles, setMediaFiles] = useState<MediaUploadType[]>([])
+  const [content, setContent] = useState("");
+  const [gameCategory, setGameCategory] = useState<string>("general");
+  const [mediaFiles, setMediaFiles] = useState<MediaUploadType[]>([]);
   // Always use blockchain mode - no more free posts
-  const postMode = 'blockchain'
-  const [error, setError] = useState<string | null>(null)
+  const postMode = "blockchain";
+  const [error, setError] = useState<string | null>(null);
 
-  const isCreating = isCreatingBlockchain
-  const maxLength = 2000
-  const isValid = content.trim().length > 0 && content.length <= maxLength
+  const isCreating = isCreatingBlockchain;
+  const maxLength = 2000;
+  const isValid = content.trim().length > 0 && content.length <= maxLength;
 
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setContent('')
-      setGameCategory('general')
-      setMediaFiles([])
-      setError(null)
+      setContent("");
+      setGameCategory("general");
+      setMediaFiles([]);
+      setError(null);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleMediaUpload = (uploads: MediaUploadType[]) => {
-    setMediaFiles(prev => [...prev, ...uploads])
-    setError(null)
-  }
+    setMediaFiles((prev) => [...prev, ...uploads]);
+    setError(null);
+  };
 
   const removeMedia = (index: number) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index))
-  }
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleConnectWallet = async () => {
     try {
-      const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0]
+      const connector =
+        connectors.find((c) => c.name === "MetaMask") || connectors[0];
       if (connector) {
-        await connect({ connector })
+        await connect({ connector });
       }
     } catch (error) {
-      showError('Connection Failed', 'Failed to connect wallet')
+      showError("Connection Failed", "Failed to connect wallet");
     }
-  }
+  };
 
   const handleSwitchNetwork = async () => {
     try {
-      await switchNetwork(true) // true for testnet
-      success('Network Switched', 'Successfully switched to Somnia testnet')
+      await switchNetwork(true); // true for testnet
+      success("Network Switched", "Successfully switched to Somnia testnet");
     } catch (error) {
-      showError('Network Switch Failed', 'Failed to switch to Somnia network')
+      showError("Network Switch Failed", "Failed to switch to Somnia network");
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     if (!content.trim()) {
-      setError('Post content is required')
-      return
+      setError("Post content is required");
+      return;
     }
 
     if (!user) {
-      setError('You must be logged in to create a post')
-      return
+      setError("You must be logged in to create a post");
+      return;
     }
 
     try {
@@ -133,49 +184,56 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
         content: content.trim(),
         game_category: gameCategory,
         media_ipfs: mediaFiles
-          .filter(file => file.ipfs_hash)
-          .map(file => file.ipfs_hash!)
-      }
+          .filter((file) => file.ipfs_hash)
+          .map((file) => file.ipfs_hash!),
+      };
 
       // Always create blockchain posts - check wallet requirements
       if (!isContractAvailable) {
-        setError('Blockchain contract not available. Please check your connection.')
-        return
+        setError(
+          "Blockchain contract not available. Please check your connection."
+        );
+        return;
       }
 
       if (needsConnection) {
-        setError('Please connect your wallet to create blockchain posts')
-        return
+        setError("Please connect your wallet to create blockchain posts");
+        return;
       }
 
       if (needsNetworkSwitch) {
-        setError('Please switch to Somnia network to create blockchain posts')
-        return
+        setError("Please switch to Somnia network to create blockchain posts");
+        return;
       }
 
       if (!isReady) {
-        setError('Wallet not ready for blockchain transactions')
-        return
+        setError("Wallet not ready for blockchain transactions");
+        return;
       }
 
       await createBlockchainPost({
         content: postData.content,
-        mediaIpfs: postData.media_ipfs[0] || '',
-        gameCategory: postData.game_category
-      })
+        mediaIpfs: postData.media_ipfs[0] || "",
+        gameCategory: postData.game_category,
+      });
 
-      success('Blockchain Post Created!', 'Your post has been published to the Somnia blockchain')
-      onSuccess?.()
-      onClose()
+      success(
+        "Blockchain Post Created!",
+        "Your post has been published to the Somnia blockchain"
+      );
+      onSuccess?.();
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create post')
+      setError(err instanceof Error ? err.message : "Failed to create post");
     }
-  }
+  };
 
-  const selectedCategory = gameCategories.find(cat => cat.value === gameCategory)
+  const selectedCategory = gameCategories.find(
+    (cat) => cat.value === gameCategory
+  );
 
   return (
-    <Dialog isOpen={isOpen} onClose={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background-primary border border-border-primary">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
@@ -184,7 +242,10 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
             </div>
             Create Amazing Content
             {isContractAvailable && (
-              <Badge variant="outline" className="border-success-500 text-success-400">
+              <Badge
+                variant="outline"
+                className="border-success-500 text-success-400"
+              >
                 <Zap className="h-3 w-3 mr-1" />
                 Blockchain Ready
               </Badge>
@@ -200,7 +261,7 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 {user.avatar_ipfs ? (
                   <AvatarImage
                     src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`}
-                    alt={user.display_name || user.username}
+                    alt={user.display_name || user.username || "User avatar"}
                   />
                 ) : (
                   <AvatarFallback>
@@ -209,7 +270,9 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 )}
               </Avatar>
               <div>
-                <h3 className="font-semibold text-text-primary">{user.display_name}</h3>
+                <h3 className="font-semibold text-text-primary">
+                  {user.display_name}
+                </h3>
                 <p className="text-sm text-text-tertiary">@{user.username}</p>
               </div>
             </div>
@@ -223,33 +286,50 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                   <Shield className="h-5 w-5 text-secondary-400" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-text-primary">Blockchain Post</h4>
+                  <h4 className="font-semibold text-text-primary">
+                    Blockchain Post
+                  </h4>
                   <p className="text-sm text-text-tertiary">
                     Your content will be stored permanently on Somnia blockchain
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="border-warning-500 text-warning-400 text-xs">
+                <Badge
+                  variant="outline"
+                  className="border-warning-500 text-warning-400 text-xs"
+                >
                   <Coins className="h-3 w-3 mr-1" />
                   Fee: {postFee} STT
                 </Badge>
-                <Badge variant="outline" className="border-success-500 text-success-400 text-xs">
+                <Badge
+                  variant="outline"
+                  className="border-success-500 text-success-400 text-xs"
+                >
                   Permanent & Verified
                 </Badge>
                 {needsConnection && (
-                  <Badge variant="outline" className="border-red-500 text-red-400 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="border-red-500 text-red-400 text-xs"
+                  >
                     <Wallet className="h-3 w-3 mr-1" />
                     Connect Wallet
                   </Badge>
                 )}
                 {needsNetworkSwitch && (
-                  <Badge variant="outline" className="border-orange-500 text-orange-400 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="border-orange-500 text-orange-400 text-xs"
+                  >
                     Switch Network
                   </Badge>
                 )}
                 {isReady && (
-                  <Badge variant="outline" className="border-green-500 text-green-400 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="border-green-500 text-green-400 text-xs"
+                  >
                     ✓ Ready
                   </Badge>
                 )}
@@ -258,50 +338,55 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
           )}
 
           {/* Wallet Connection Helper */}
-          {isContractAvailable && postMode === 'blockchain' && (needsConnection || needsNetworkSwitch) && (
-            <div className="p-4 bg-warning-500/10 border border-warning-500/30 rounded-xl">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-warning-400 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-warning-400 mb-2">Wallet Setup Required</h4>
-                  {needsConnection && (
-                    <p className="text-sm text-text-tertiary mb-3">
-                      Connect your wallet to create blockchain posts and start earning rewards.
-                    </p>
-                  )}
-                  {needsNetworkSwitch && (
-                    <p className="text-sm text-text-tertiary mb-3">
-                      Switch to Somnia testnet to enable blockchain posting.
-                    </p>
-                  )}
-                  <div className="flex gap-2">
+          {isContractAvailable &&
+            postMode === "blockchain" &&
+            (needsConnection || needsNetworkSwitch) && (
+              <div className="p-4 bg-warning-500/10 border border-warning-500/30 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-warning-400 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-warning-400 mb-2">
+                      Wallet Setup Required
+                    </h4>
                     {needsConnection && (
-                      <Button
-                        type="button"
-                        onClick={handleConnectWallet}
-                        size="sm"
-                        className="bg-primary-500 hover:bg-primary-600"
-                      >
-                        <Wallet className="h-4 w-4 mr-2" />
-                        Connect Wallet
-                      </Button>
+                      <p className="text-sm text-text-tertiary mb-3">
+                        Connect your wallet to create blockchain posts and start
+                        earning rewards.
+                      </p>
                     )}
                     {needsNetworkSwitch && (
-                      <Button
-                        type="button"
-                        onClick={handleSwitchNetwork}
-                        size="sm"
-                        variant="outline"
-                        className="border-warning-500 text-warning-400 hover:bg-warning-500/10"
-                      >
-                        Switch to Somnia
-                      </Button>
+                      <p className="text-sm text-text-tertiary mb-3">
+                        Switch to Somnia testnet to enable blockchain posting.
+                      </p>
                     )}
+                    <div className="flex gap-2">
+                      {needsConnection && (
+                        <Button
+                          type="button"
+                          onClick={handleConnectWallet}
+                          size="sm"
+                          className="bg-primary-500 hover:bg-primary-600"
+                        >
+                          <Wallet className="h-4 w-4 mr-2" />
+                          Connect Wallet
+                        </Button>
+                      )}
+                      {needsNetworkSwitch && (
+                        <Button
+                          type="button"
+                          onClick={handleSwitchNetwork}
+                          size="sm"
+                          variant="outline"
+                          className="border-warning-500 text-warning-400 hover:bg-warning-500/10"
+                        >
+                          Switch to Somnia
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Game Category Selection */}
           <div className="space-y-3">
@@ -315,10 +400,17 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 <SelectValue>
                   {selectedCategory && (
                     <div className="flex items-center gap-3">
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-r", selectedCategory.color)}>
+                      <div
+                        className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-r",
+                          selectedCategory.color
+                        )}
+                      >
                         <span className="text-lg">{selectedCategory.icon}</span>
                       </div>
-                      <span className="font-medium">{selectedCategory.label}</span>
+                      <span className="font-medium">
+                        {selectedCategory.label}
+                      </span>
                     </div>
                   )}
                 </SelectValue>
@@ -327,7 +419,12 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 {gameCategories.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     <div className="flex items-center gap-3">
-                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-r", category.color)}>
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-r",
+                          category.color
+                        )}
+                      >
                         <span className="text-sm">{category.icon}</span>
                       </div>
                       <span>{category.label}</span>
@@ -345,11 +442,16 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 What's happening in your gaming world?
                 <span className="text-error-400 ml-1">*</span>
               </label>
-              <span className={cn(
-                "text-sm font-medium",
-                content.length > maxLength ? 'text-error-400' :
-                content.length > maxLength * 0.8 ? 'text-warning-400' : 'text-text-tertiary'
-              )}>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  content.length > maxLength
+                    ? "text-error-400"
+                    : content.length > maxLength * 0.8
+                    ? "text-warning-400"
+                    : "text-text-tertiary"
+                )}
+              >
                 {content.length}/{maxLength}
               </span>
             </div>
@@ -392,9 +494,14 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 {mediaFiles.map((file, index) => (
                   <div key={index} className="relative group">
                     <div className="aspect-square bg-background-tertiary rounded-xl overflow-hidden border border-border-secondary">
-                      {file.type.startsWith('image/') ? (
+                      {file.type.startsWith("image/") ? (
                         <img
-                          src={file.preview || (file.ipfs_hash ? `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}` : '')}
+                          src={
+                            file.preview ||
+                            (file.ipfs_hash
+                              ? `https://gateway.pinata.cloud/ipfs/${file.ipfs_hash}`
+                              : "")
+                          }
                           alt={`Upload ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -426,7 +533,7 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                       variant="secondary"
                       className="absolute bottom-2 left-2 text-xs backdrop-blur-sm bg-background-primary/80"
                     >
-                      {file.type.startsWith('image/') ? 'IMG' : 'VID'}
+                      {file.type.startsWith("image/") ? "IMG" : "VID"}
                     </Badge>
                   </div>
                 ))}
@@ -440,7 +547,9 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-error-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-error-400">Failed to create post</p>
+                  <p className="font-medium text-error-400">
+                    Failed to create post
+                  </p>
                   <p className="text-sm text-error-300 mt-1">{error}</p>
                 </div>
               </div>
@@ -463,7 +572,7 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
               disabled={!isValid || isCreating}
               className={cn(
                 "px-8 font-semibold transition-all duration-300",
-                postMode === 'blockchain'
+                postMode === "blockchain"
                   ? "bg-gradient-to-r from-secondary-500 to-primary-500 hover:from-secondary-600 hover:to-primary-600 shadow-lg shadow-secondary-500/25"
                   : "bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
               )}
@@ -472,18 +581,22 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>
-                    {postMode === 'blockchain' ? 'Publishing to Blockchain...' : 'Creating Post...'}
+                    {postMode === "blockchain"
+                      ? "Publishing to Blockchain..."
+                      : "Creating Post..."}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  {postMode === 'blockchain' ? (
+                  {postMode === "blockchain" ? (
                     <Shield className="h-4 w-4" />
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
                   <span>
-                    {postMode === 'blockchain' ? 'Publish to Blockchain' : 'Create Post'}
+                    {postMode === "blockchain"
+                      ? "Publish to Blockchain"
+                      : "Create Post"}
                   </span>
                 </div>
               )}
@@ -492,5 +605,5 @@ export function PostCreateModal({ isOpen, onClose, onSuccess }: PostCreateModalP
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

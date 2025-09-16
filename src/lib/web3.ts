@@ -10,10 +10,6 @@ export const wagmiConfig = createConfig({
       target: 'metaMask',
       shimDisconnect: true,
     }),
-    injected({
-      target: 'browserExtension',
-      shimDisconnect: true,
-    }),
     walletConnect({ 
       projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'your-project-id',
       showQrModal: true,

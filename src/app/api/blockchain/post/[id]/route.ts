@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, http } from 'viem'
 
 // Somnia testnet configuration
 const somniaTestnet = {
@@ -23,16 +23,39 @@ const somniaTestnet = {
 
 // Contract configuration
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_POST_REGISTRY_ADDRESS as `0x${string}`
-const POST_REGISTRY_ABI = parseAbi([
-  'function getPost(uint256 _postId) external view returns (tuple(uint256 id, address author, string content, string mediaIpfs, string gameCategory, uint256 timestamp, bool isDeleted, uint256 likesCount, uint256 commentsCount))',
-])
+const POST_REGISTRY_ABI = [
+  {
+    "inputs": [{"internalType": "uint256", "name": "_postId", "type": "uint256"}],
+    "name": "getPost",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "id", "type": "uint256"},
+          {"internalType": "address", "name": "author", "type": "address"},
+          {"internalType": "string", "name": "content", "type": "string"},
+          {"internalType": "string", "name": "mediaIpfs", "type": "string"},
+          {"internalType": "string", "name": "gameCategory", "type": "string"},
+          {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
+          {"internalType": "bool", "name": "isDeleted", "type": "bool"},
+          {"internalType": "uint256", "name": "likesCount", "type": "uint256"},
+          {"internalType": "uint256", "name": "commentsCount", "type": "uint256"}
+        ],
+        "internalType": "struct PostRegistry.Post",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const postId = params.id
+    const { id: postId } = await params
 
     if (!postId || isNaN(Number(postId))) {
       return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
@@ -56,17 +79,22 @@ export async function GET(
       args: [BigInt(postId)],
     })
 
+    // Check if post exists (id should be > 0)
+    if (!postData || postData.id === 0n) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    }
+
     // Format the response - convert BigInt values to strings for JSON serialization
     const formattedPost = {
-      id: postData[0].toString(),
-      author: postData[1],
-      content: postData[2],
-      mediaIpfs: postData[3],
-      gameCategory: postData[4],
-      timestamp: postData[5].toString(),
-      isDeleted: postData[6],
-      likesCount: postData[7].toString(),
-      commentsCount: postData[8].toString(),
+      id: postData.id.toString(),
+      author: postData.author,
+      content: postData.content,
+      mediaIpfs: postData.mediaIpfs,
+      gameCategory: postData.gameCategory,
+      timestamp: postData.timestamp.toString(),
+      isDeleted: postData.isDeleted,
+      likesCount: postData.likesCount.toString(),
+      commentsCount: postData.commentsCount.toString(),
     }
 
     return NextResponse.json(formattedPost)

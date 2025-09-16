@@ -23,11 +23,12 @@ interface NetworkStatusProps {
 }
 
 export function NetworkStatus({ showDetails = false, className }: NetworkStatusProps) {
-  const { isConnected, chain, switchToSomnia, isSwitchingNetwork } = useWallet()
+  const { isConnected, chain, switchToSomnia } = useWallet()
   const { error, success } = useToastHelpers()
   const [isOnline, setIsOnline] = useState(true)
   const [blockNumber, setBlockNumber] = useState<number | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false)
 
   // Monitor network connectivity
   useEffect(() => {
@@ -98,11 +99,14 @@ export function NetworkStatus({ showDetails = false, className }: NetworkStatusP
   }
 
   const handleNetworkSwitch = async () => {
+    setIsSwitchingNetwork(true)
     try {
       await switchToSomnia()
       success('Successfully switched to Somnia Network')
     } catch (err) {
       error('Failed to switch network', 'Please try again or switch manually')
+    } finally {
+      setIsSwitchingNetwork(false)
     }
   }
 

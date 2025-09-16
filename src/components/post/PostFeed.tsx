@@ -1,11 +1,12 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { useBlockchainPosts } from '@/hooks/useBlockchainPosts'
-import { PostItem } from './PostItem'
-import { PostCreate } from './PostCreate'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent } from '@/components/ui/Card'
+import React, { useState } from "react";
+import { useBlockchainPosts } from "@/hooks/useBlockchainPosts";
+import { PostItem } from "./PostItem";
+import { PostCreate } from "./PostCreate";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Post } from "@/types/post";
 import {
   MessageSquare,
   Loader2,
@@ -13,59 +14,58 @@ import {
   Filter,
   TrendingUp,
   Clock,
-  Users
-} from 'lucide-react'
-import { QueryParams } from '@/types'
+  Users,
+} from "lucide-react";
+import { QueryParams } from "@/types";
 
 interface PostFeedProps {
-  showCreatePost?: boolean
-  initialFilter?: QueryParams['filter']
-  className?: string
+  showCreatePost?: boolean;
+  initialFilter?: QueryParams["filter"];
+  className?: string;
 }
 
-export function PostFeed({ showCreatePost = true, initialFilter, className }: PostFeedProps) {
-  const [filter, setFilter] = useState<QueryParams['filter']>(initialFilter)
-  const [feedType, setFeedType] = useState<'latest' | 'following' | 'trending'>('latest')
+export function PostFeed({
+  showCreatePost = true,
+  initialFilter,
+  className,
+}: PostFeedProps) {
+  const [filter, setFilter] = useState<QueryParams["filter"]>(initialFilter);
+  const [feedType, setFeedType] = useState<"latest" | "following" | "trending">(
+    "latest"
+  );
 
   const queryParams: QueryParams = {
     limit: 20,
     page: 1,
     filter: {
       ...filter,
-      following_only: feedType === 'following'
-    }
-  }
+      following_only: feedType === "following",
+    },
+  };
 
-  const {
-    posts,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    deletePost,
-    isDeleting
-  } = useBlockchainPosts()
+  const { posts, isLoading, isError, error, refetch, deletePost, isDeleting } =
+    useBlockchainPosts();
 
   // Filter posts based on feed type (blockchain posts don't support following filtering yet)
-  const filteredPosts = posts
+  const filteredPosts = posts;
 
   const handleRefresh = () => {
-    refetch()
-  }
+    refetch();
+  };
 
-  const handleFeedTypeChange = (type: 'latest' | 'following' | 'trending') => {
-    setFeedType(type)
-  }
+  const handleFeedTypeChange = (type: "latest" | "following" | "trending") => {
+    setFeedType(type);
+  };
 
   const handleDeletePost = async (postId: string) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
+    if (window.confirm("Are you sure you want to delete this post?")) {
       try {
-        await deletePost(postId)
+        await deletePost(postId);
       } catch (error) {
-        console.error('Failed to delete post:', error)
+        console.error("Failed to delete post:", error);
       }
     }
-  }
+  };
 
   if (isError) {
     return (
@@ -74,7 +74,9 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
           <div className="text-red-400 mb-4">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-semibold">Failed to load posts</p>
-            <p className="text-sm text-gray-400 mt-2">{error}</p>
+            <p className="text-sm text-gray-400 mt-2">
+              {error?.message || "Unknown error occurred"}
+            </p>
           </div>
           <Button
             onClick={handleRefresh}
@@ -86,15 +88,13 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
           </Button>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Create Post */}
-      {showCreatePost && (
-        <PostCreate onSuccess={handleRefresh} />
-      )}
+      {showCreatePost && <PostCreate onSuccess={handleRefresh} />}
 
       {/* Feed Controls */}
       <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
@@ -103,33 +103,33 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
             {/* Feed Type Selector */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => handleFeedTypeChange('latest')}
+                onClick={() => handleFeedTypeChange("latest")}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  feedType === 'latest'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  feedType === "latest"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700"
                 }`}
               >
                 <Clock className="h-4 w-4" />
                 Latest
               </button>
               <button
-                onClick={() => handleFeedTypeChange('following')}
+                onClick={() => handleFeedTypeChange("following")}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  feedType === 'following'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  feedType === "following"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700"
                 }`}
               >
                 <Users className="h-4 w-4" />
                 Following
               </button>
               <button
-                onClick={() => handleFeedTypeChange('trending')}
+                onClick={() => handleFeedTypeChange("trending")}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  feedType === 'trending'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  feedType === "trending"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700"
                 }`}
               >
                 <TrendingUp className="h-4 w-4" />
@@ -145,7 +145,9 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
               disabled={isLoading}
               className="text-gray-400 hover:text-white"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
         </CardContent>
@@ -155,7 +157,10 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
       {isLoading && filteredPosts.length === 0 ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <Card key={i} className="border-gray-700 bg-gray-900/50 animate-pulse">
+            <Card
+              key={i}
+              className="border-gray-700 bg-gray-900/50 animate-pulse"
+            >
               <CardContent className="p-6">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="h-10 w-10 bg-gray-700 rounded-full" />
@@ -183,7 +188,23 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
           {filteredPosts.map((post) => (
             <PostItem
               key={post.id}
-              post={post}
+              post={
+                {
+                  ...post,
+                  user_id: post.author,
+                  likes_count: post.likesCount,
+                  donations_count: 0, // Not available in blockchain posts
+                  comments_count: post.commentsCount,
+                  updated_at: post.created_at,
+                  user: {
+                    id: post.user.address,
+                    username: post.user.username,
+                    display_name: post.user.display_name,
+                    avatar_ipfs: post.user.avatar_ipfs || null,
+                    is_verified: post.user.is_verified,
+                  },
+                } as unknown as Post
+              }
               onDelete={handleDeletePost}
             />
           ))}
@@ -194,7 +215,7 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
               <Button
                 onClick={() => {
                   // TODO: Implement pagination
-                  console.log('Load more posts')
+                  console.log("Load more posts");
                 }}
                 variant="outline"
                 className="border-gray-600 hover:border-blue-500"
@@ -215,17 +236,18 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
           <CardContent className="p-8 text-center">
             <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-600" />
             <p className="text-gray-400 text-lg font-medium">
-              {feedType === 'following' ? 'No posts from people you follow' : 'No posts yet'}
+              {feedType === "following"
+                ? "No posts from people you follow"
+                : "No posts yet"}
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              {feedType === 'following'
-                ? 'Follow some gamers to see their posts here'
-                : 'Be the first to share something amazing!'
-              }
+              {feedType === "following"
+                ? "Follow some gamers to see their posts here"
+                : "Be the first to share something amazing!"}
             </p>
           </CardContent>
         </Card>
       )}
     </div>
-  )
+  );
 }

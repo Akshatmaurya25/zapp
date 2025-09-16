@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare update data
-    const finalUpdateData: any = {
+    const finalUpdateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     }
 

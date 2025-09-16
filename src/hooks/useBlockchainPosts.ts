@@ -64,7 +64,7 @@ export function useBlockchainPosts() {
         try {
           // We need to call the contract directly for each post
           // This is a simplified approach - in production, you'd want to batch these calls
-          const response = await fetch(`/api/blockchain/post/${postId}`)
+          const response = await fetch(`/api/blockchain/post/${postId.toString()}`)
           if (!response.ok) return null
 
           const postData: OnChainPostResponse = await response.json()
@@ -174,7 +174,7 @@ export function useUserBlockchainPosts(userAddress: string) {
       // Similar logic to fetch detailed post data
       const postPromises = postIds.map(async (postId) => {
         try {
-          const response = await fetch(`/api/blockchain/post/${postId}`)
+          const response = await fetch(`/api/blockchain/post/${postId.toString()}`)
           if (!response.ok) return null
 
           const postData: OnChainPostResponse = await response.json()

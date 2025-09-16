@@ -143,7 +143,7 @@ export function usePostContract() {
   })
 
   // Contract write hooks
-  const { writeContract } = useWriteContract()
+  const { writeContractAsync } = useWriteContract()
 
   // Transaction status
   const { isLoading: isCreateTxLoading } = useWaitForTransactionReceipt({
@@ -172,7 +172,7 @@ export function usePostContract() {
     try {
       setIsCreating(true)
 
-      const hash = await writeContract({
+      const hash = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: POST_REGISTRY_ABI,
         functionName: 'createPost',
@@ -193,7 +193,7 @@ export function usePostContract() {
       showError('Transaction Failed', message)
       throw error
     }
-  }, [isContractAvailable, postFeeData, writeContract, success, showError])
+  }, [isContractAvailable, postFeeData, writeContractAsync, success, showError])
 
   // Toggle like function
   const toggleLike = useCallback(async (postId: bigint) => {
@@ -204,7 +204,7 @@ export function usePostContract() {
     try {
       setIsLiking(true)
 
-      const hash = await writeContract({
+      const hash = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: POST_REGISTRY_ABI,
         functionName: 'toggleLike',
@@ -220,7 +220,7 @@ export function usePostContract() {
       showError('Transaction Failed', message)
       throw error
     }
-  }, [isContractAvailable, writeContract, success, showError])
+  }, [isContractAvailable, writeContractAsync, success, showError])
 
   // Get single post
   const usePost = (postId: bigint) => {
