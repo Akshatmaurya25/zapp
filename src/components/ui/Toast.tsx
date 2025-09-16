@@ -157,25 +157,26 @@ function ToastItem({ toast }: ToastItemProps) {
   const getColorClasses = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-success-500/10 border-success-500/20 text-success-400'
+        return 'bg-success-500/20 border-success-500/30 text-success-300 shadow-success-500/20'
       case 'error':
-        return 'bg-error-500/10 border-error-500/20 text-error-400'
+        return 'bg-error-500/20 border-error-500/30 text-error-300 shadow-error-500/20'
       case 'warning':
-        return 'bg-warning-500/10 border-warning-500/20 text-warning-400'
+        return 'bg-warning-500/20 border-warning-500/30 text-warning-300 shadow-warning-500/20'
       case 'info':
-        return 'bg-info-500/10 border-info-500/20 text-info-400'
+        return 'bg-info-500/20 border-info-500/30 text-info-300 shadow-info-500/20'
       case 'loading':
-        return 'bg-primary-500/10 border-primary-500/20 text-primary-400'
+        return 'bg-primary-500/20 border-primary-500/30 text-primary-300 shadow-primary-500/20'
       default:
-        return 'bg-background-elevated border-border-primary text-text-primary'
+        return 'bg-gray-900/90 border-gray-700/50 text-gray-100 shadow-gray-900/50'
     }
   }
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-lg backdrop-blur-sm',
+        'flex items-start gap-3 p-4 rounded-lg border shadow-2xl backdrop-blur-md',
         'transition-all duration-200 transform',
+        'ring-1 ring-white/10', // Add subtle ring for better visibility
         getColorClasses(),
         isVisible
           ? 'translate-x-0 opacity-100 scale-100'

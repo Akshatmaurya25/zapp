@@ -4,6 +4,7 @@ import "./globals.css";
 import { Web3Provider } from "@/contexts/Web3Context";
 import { UserProvider } from "@/contexts/UserContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ContractDebug } from "@/components/debug/ContractDebug";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
           <UserProvider>
             <ToastProvider>
               {children}
+              <ContractDebug />
             </ToastProvider>
           </UserProvider>
         </Web3Provider>

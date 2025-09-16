@@ -28,7 +28,12 @@ import {
   Verified,
   Copy,
   Gift,
-  Coins
+  Coins,
+  Sparkles,
+  TrendingUp,
+  Eye,
+  Zap,
+  Globe
 } from 'lucide-react'
 import { Post } from '@/types'
 
@@ -123,206 +128,244 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
   return (
     <Card
       className={cn(
-        'transition-all duration-200',
-        isBlockchainPost && 'border-primary-500/30 shadow-glow-sm',
+        'group relative overflow-hidden transition-all duration-500 hover:shadow-2xl',
+        isBlockchainPost
+          ? 'border-primary-500/40 bg-gradient-to-br from-slate-900/95 to-slate-800/95 shadow-lg shadow-primary-500/10 hover:shadow-primary-500/20'
+          : 'border-slate-700/50 bg-slate-900/80 hover:bg-slate-800/90 hover:border-slate-600/50',
+        'backdrop-blur-xl hover:-translate-y-1',
         className
       )}
-      variant={isBlockchainPost ? 'elevated' : 'default'}
-      hover="subtle"
     >
-      <CardContent className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              {post.user?.avatar_ipfs ? (
-                <AvatarImage
-                  src={`https://gateway.pinata.cloud/ipfs/${post.user.avatar_ipfs}`}
-                  alt={post.user.display_name || post.user.username || 'User'}
-                />
-              ) : (
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              )}
-            </Avatar>
+      {/* Blockchain Post Glow Effect */}
+      {isBlockchainPost && (
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 via-secondary-500/5 to-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      )}
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-text-primary">
-                  {post.user?.display_name || 'Anonymous'}
-                </h3>
-                {post.user?.is_verified && (
-                  <Verified className="h-4 w-4 text-primary-500" />
-                )}
-                {isBlockchainPost && (
-                  <Badge variant="outline" className="text-xs border-primary-500 text-primary-400">
-                    <Shield className="h-3 w-3 mr-1" />
-                    On-Chain
-                  </Badge>
-                )}
-                {post.user?.username && (
-                  <span className="text-text-tertiary text-sm">
-                    @{post.user.username}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Clock className="h-3 w-3" />
-                <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
-                {post.game_category && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {post.game_category}
-                    </Badge>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Follow Button */}
-            {!isOwner && (
-              <FollowButton userId={post.user_id} size="sm" />
-            )}
-          </div>
-
-          {/* Actions Menu */}
-          {isOwner && (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowActions(!showActions)}
-                className="text-gray-400 hover:text-white"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-
-              {showActions && (
-                <div className="absolute right-0 top-8 z-10 bg-background-elevated border border-border-primary rounded-lg shadow-lg py-1 min-w-[160px]">
-                  <button
-                    onClick={() => {
-                      handleCopyLinkDirectly()
-                      setShowActions(false)
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-background-tertiary flex items-center gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy Link
-                  </button>
-
-                  {isBlockchainPost && (
-                    <button
-                      onClick={() => {
-                        handleViewOnChain()
-                        setShowActions(false)
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-background-tertiary flex items-center gap-2"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      View on Chain
-                    </button>
+      <CardContent className="relative p-0">
+        {/* Header Section */}
+        <div className="p-6 pb-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4 flex-1">
+              {/* Avatar with Gaming Theme */}
+              <div className="relative">
+                <Avatar className="h-12 w-12 border-2 border-slate-600 shadow-lg">
+                  {post.user?.avatar_ipfs ? (
+                    <AvatarImage
+                      src={`https://gateway.pinata.cloud/ipfs/${post.user.avatar_ipfs}`}
+                      alt={post.user.display_name || post.user.username || 'User'}
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500">
+                      <User className="h-6 w-6 text-white" />
+                    </AvatarFallback>
                   )}
+                </Avatar>
+                {/* Online Status Indicator */}
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-slate-900 rounded-full shadow-lg" />
+              </div>
 
-                  {isOwner && (
+              <div className="flex-1 min-w-0">
+                {/* User Info Row */}
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-white truncate">
+                    {post.user?.display_name || 'Anonymous Gamer'}
+                  </h3>
+                  {post.user?.is_verified && (
+                    <Verified className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                  )}
+                  {isBlockchainPost && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-primary-500/60 bg-primary-500/10 text-primary-400 backdrop-blur-sm"
+                    >
+                      <Shield className="h-3 w-3 mr-1" />
+                      On-Chain
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Username and Metadata */}
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  {post.user?.username && (
+                    <span className="text-gray-500">@{post.user.username}</span>
+                  )}
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                  </div>
+                  {post.game_category && (
                     <>
-                      {onEdit && (
-                        <button
-                          onClick={() => {
-                            onEdit?.(post)
-                            setShowActions(false)
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-background-tertiary flex items-center gap-2"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={() => {
-                            onDelete?.(post.id)
-                            setShowActions(false)
-                          }}
-                          className="w-full px-3 py-2 text-left text-sm text-error-400 hover:bg-background-tertiary flex items-center gap-2"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
-                        </button>
-                      )}
+                      <span>•</span>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-slate-700/50 text-slate-300 border-slate-600"
+                      >
+                        🎮 {post.game_category}
+                      </Badge>
                     </>
                   )}
                 </div>
+              </div>
+
+              {/* Follow Button */}
+              {!isOwner && (
+                <FollowButton userId={post.user_id} size="sm" />
               )}
+            </div>
+
+            {/* Actions Menu */}
+            {isOwner && (
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowActions(!showActions)}
+                  className="text-gray-400 hover:text-white hover:bg-slate-700 transition-colors"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+
+                {showActions && (
+                  <div className="absolute right-0 top-8 z-20 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl py-2 min-w-[180px] backdrop-blur-xl">
+                    <button
+                      onClick={() => {
+                        handleCopyLinkDirectly()
+                        setShowActions(false)
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-slate-700 hover:text-white flex items-center gap-3 transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Link
+                    </button>
+
+                    {isBlockchainPost && (
+                      <button
+                        onClick={() => {
+                          handleViewOnChain()
+                          setShowActions(false)
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-slate-700 hover:text-white flex items-center gap-3 transition-colors"
+                      >
+                        <Globe className="h-4 w-4" />
+                        View on Chain
+                      </button>
+                    )}
+
+                    {isOwner && (
+                      <>
+                        {onEdit && (
+                          <button
+                            onClick={() => {
+                              onEdit?.(post)
+                              setShowActions(false)
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-slate-700 hover:text-white flex items-center gap-3 transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={() => {
+                              onDelete?.(post.id)
+                              setShowActions(false)
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center gap-3 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="px-6 pb-4">
+          <div className="mb-4">
+            <p className="text-gray-100 whitespace-pre-wrap leading-relaxed text-[15px] font-medium">
+              {post.content}
+            </p>
+          </div>
+
+          {/* Blockchain Verification Banner */}
+          {isBlockchainPost && (post as any).blockchain_tx_hash && (
+            <div className="mb-4 p-4 bg-gradient-to-r from-primary-500/10 via-secondary-500/10 to-primary-500/10 border border-primary-500/30 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-500/20 rounded-lg">
+                  <Shield className="h-4 w-4 text-primary-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-primary-300">
+                    Blockchain Verified
+                  </div>
+                  <div className="text-xs text-primary-400/80">
+                    Permanently stored on Somnia Network
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleViewOnChain}
+                  className="text-primary-400 hover:text-primary-300 hover:bg-primary-500/20 transition-colors"
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Content */}
-        <div className="mb-4">
-          <p className="text-text-primary whitespace-pre-wrap leading-relaxed">
-            {post.content}
-          </p>
-        </div>
-
-        {/* Blockchain Verification */}
-        {isBlockchainPost && (post as any).blockchain_tx_hash && (
-          <div className="mb-4 p-3 bg-primary-500/5 border border-primary-500/20 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-4 w-4 text-primary-500" />
-              <span className="text-text-secondary">
-                Verified on Somnia blockchain
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleViewOnChain}
-                className="ml-auto h-auto p-1 text-primary-500"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Media */}
+        {/* Media Gallery */}
         {post.media_ipfs && post.media_ipfs.length > 0 && (
-          <div className="mb-4">
-            <div className={`grid gap-2 ${
+          <div className="px-6 pb-4">
+            <div className={cn(
+              "grid gap-3 rounded-xl overflow-hidden",
               post.media_ipfs.length === 1 ? 'grid-cols-1' :
               post.media_ipfs.length === 2 ? 'grid-cols-2' :
               post.media_ipfs.length === 3 ? 'grid-cols-3' :
               'grid-cols-2'
-            }`}>
+            )}>
               {post.media_ipfs.slice(0, 4).map((hash, index) => (
                 <div
                   key={hash}
-                  className={`relative group cursor-pointer ${
-                    post.media_ipfs!.length === 3 && index === 0 ? 'row-span-2' : ''
-                  } ${
+                  className={cn(
+                    "relative group cursor-pointer overflow-hidden rounded-xl",
+                    post.media_ipfs!.length === 3 && index === 0 ? 'row-span-2' : '',
                     post.media_ipfs!.length > 4 && index === 3 ? 'relative' : ''
-                  }`}
+                  )}
                 >
                   <img
                     src={`https://gateway.pinata.cloud/ipfs/${hash}`}
                     alt={`Media ${index + 1}`}
-                    className="w-full h-full object-contain rounded-lg max-h-80 bg-gray-800"
+                    className="w-full h-full object-cover bg-slate-800 transition-transform duration-300 group-hover:scale-105"
+                    style={{ aspectRatio: post.media_ipfs!.length === 1 ? 'auto' : '1' }}
                   />
 
                   {/* Overlay for +N more */}
                   {post.media_ipfs!.length > 4 && index === 3 && (
-                    <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
-                      <span className="text-white text-xl font-semibold">
-                        +{post.media_ipfs!.length - 4}
-                      </span>
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="text-white text-2xl font-bold">
+                          +{post.media_ipfs!.length - 4}
+                        </span>
+                        <div className="text-white/80 text-sm">more</div>
+                      </div>
                     </div>
                   )}
 
-                  {/* Expand overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <ExternalLink className="h-6 w-6 text-white" />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="p-2 bg-white/20 backdrop-blur-sm rounded-full">
+                      <Eye className="h-5 w-5 text-white" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -330,52 +373,66 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
           </div>
         )}
 
-        {/* Engagement Stats */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-          <div className="flex items-center gap-6">
-            {/* Like Button */}
-            <button
-              onClick={handleLike}
-              disabled={isTogglingLike}
-              className={`flex items-center gap-2 transition-colors ${
-                isLiked
-                  ? 'text-red-500 hover:text-red-400'
-                  : 'text-gray-400 hover:text-red-500'
-              }`}
-            >
-              <Heart
-                className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`}
-              />
-              <span className="text-sm">{post.likes_count || 0}</span>
-            </button>
-
-            {/* Comment Button */}
-            <button
-              onClick={() => setShowComments(true)}
-              className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span className="text-sm">{post.comments_count || 0}</span>
-            </button>
-
-            {/* Share Button */}
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 text-gray-400 hover:text-green-500 transition-colors"
-            >
-              <Share className="h-4 w-4" />
-              <span className="text-sm">Share</span>
-            </button>
-
-            {/* Donate Button (only show if not owner) */}
-            {!isOwner && (
+        {/* Engagement Section */}
+        <div className="border-t border-slate-700/50 bg-slate-800/30 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {/* Like Button */}
               <button
-                onClick={handleDonate}
-                className="flex items-center gap-2 text-gray-400 hover:text-yellow-500 transition-colors"
+                onClick={handleLike}
+                disabled={isTogglingLike}
+                className={cn(
+                  "group flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 hover:scale-105",
+                  isLiked
+                    ? "text-red-400 bg-red-500/10 hover:bg-red-500/20"
+                    : "text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                )}
               >
-                <Coins className="h-4 w-4" />
-                <span className="text-sm">Tip</span>
+                <Heart
+                  className={cn(
+                    "h-4 w-4 transition-all duration-300",
+                    isLiked ? "fill-current scale-110" : "group-hover:scale-110"
+                  )}
+                />
+                <span className="text-sm font-medium">{formatNumber(post.likes_count || 0)}</span>
               </button>
+
+              {/* Comment Button */}
+              <button
+                onClick={() => setShowComments(true)}
+                className="group flex items-center gap-2 px-3 py-2 rounded-full text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-300 hover:scale-105"
+              >
+                <MessageCircle className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                <span className="text-sm font-medium">{formatNumber(post.comments_count || 0)}</span>
+              </button>
+
+              {/* Share Button */}
+              <button
+                onClick={handleShare}
+                className="group flex items-center gap-2 px-3 py-2 rounded-full text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-all duration-300 hover:scale-105"
+              >
+                <Share className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                <span className="text-sm font-medium">Share</span>
+              </button>
+
+              {/* Donate Button (only show if not owner) */}
+              {!isOwner && (
+                <button
+                  onClick={handleDonate}
+                  className="group flex items-center gap-2 px-3 py-2 rounded-full text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-300 hover:scale-105"
+                >
+                  <Coins className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="text-sm font-medium">Tip</span>
+                </button>
+              )}
+            </div>
+
+            {/* Trending Indicator */}
+            {(post.likes_count || 0) > 10 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-full">
+                <TrendingUp className="h-3 w-3 text-orange-400" />
+                <span className="text-xs font-medium text-orange-400">Trending</span>
+              </div>
             )}
           </div>
         </div>

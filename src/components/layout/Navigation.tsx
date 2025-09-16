@@ -8,13 +8,14 @@ import { useUser } from '@/contexts/UserContext'
 import { Button } from '@/components/ui/Button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { PostCreateModal } from '@/components/post/PostCreateModal'
 import { formatAddress } from '@/lib/web3'
-import { 
-  Zap, 
-  Home, 
-  User, 
-  MessageSquare, 
-  Trophy, 
+import {
+  Zap,
+  Home,
+  User,
+  MessageSquare,
+  Trophy,
   Bell,
   Search,
   Plus,
@@ -24,7 +25,8 @@ import {
   X,
   TrendingUp,
   Users,
-  Coins
+  Coins,
+  Sparkles
 } from 'lucide-react'
 
 export function Navigation() {
@@ -32,6 +34,7 @@ export function Navigation() {
   const { user } = useUser()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
 
   if (!isConnected) return null
 
@@ -81,12 +84,13 @@ export function Navigation() {
           {/* Right Side */}
           <div className="flex items-center gap-4">
             {/* Create Post Button */}
-            <Link href="/post/create">
-              <Button className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Post
-              </Button>
-            </Link>
+            <Button
+              onClick={() => setIsPostModalOpen(true)}
+              className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-all duration-300 hover:scale-105"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Post
+            </Button>
 
             {/* Notifications */}
             <NotificationBell />
@@ -177,14 +181,18 @@ export function Navigation() {
                   </Link>
                 )
               })}
-              
+
               <div className="border-t border-border-secondary pt-3 mt-3">
-                <Link href="/post/create" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Post
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => {
+                    setIsPostModalOpen(true)
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Create Post
+                </Button>
               </div>
 
               {user && (
@@ -222,6 +230,16 @@ export function Navigation() {
 
       {/* Spacer for fixed navigation */}
       <div className="h-16" />
+
+      {/* Post Creation Modal */}
+      <PostCreateModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSuccess={() => {
+          setIsPostModalOpen(false)
+          // Optionally refresh posts or show success message
+        }}
+      />
     </>
   )
 }
@@ -230,40 +248,65 @@ export function Navigation() {
 export function MobileBottomNav() {
   const pathname = usePathname()
   const { isConnected } = useWallet()
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
 
   if (!isConnected) return null
 
   const bottomNavItems = [
-    { href: '/dashboard', icon: Home, label: 'Home' },
-    { href: '/feed', icon: TrendingUp, label: 'Feed' },
-    { href: '/post/create', icon: Plus, label: 'Post' },
-    { href: '/achievements', icon: Trophy, label: 'Awards' },
-    { href: '/profile', icon: User, label: 'Profile' },
+    { href: '/dashboard', icon: Home, label: 'Home', isLink: true },
+    { href: '/feed', icon: TrendingUp, label: 'Feed', isLink: true },
+    { href: '/post/create', icon: Plus, label: 'Post', isLink: false },
+    { href: '/achievements', icon: Trophy, label: 'Awards', isLink: true },
+    { href: '/profile', icon: User, label: 'Profile', isLink: true },
   ]
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background-primary/95 backdrop-blur-sm border-t border-border-primary z-40">
-      <div className="grid grid-cols-5 h-16">
-        {bottomNavItems.map((item) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href
-          
-          return (
-            <Link key={item.href} href={item.href}>
-              <div className={`flex flex-col items-center justify-center h-full transition-colors ${
-                isActive
-                  ? 'text-primary-400'
-                  : 'text-text-tertiary hover:text-text-primary'
-              }`}>
-                <Icon className={`h-5 w-5 ${item.href === '/post/create' ? 'p-1 bg-primary-500 rounded-full text-white' : ''}`} />
-                <span className="text-xs mt-1">{item.label}</span>
-              </div>
-            </Link>
-          )
-        })}
+    <>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background-primary/95 backdrop-blur-sm border-t border-border-primary z-40">
+        <div className="grid grid-cols-5 h-16">
+          {bottomNavItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+
+            if (item.isLink) {
+              return (
+                <Link key={item.href} href={item.href}>
+                  <div className={`flex flex-col items-center justify-center h-full transition-colors ${
+                    isActive
+                      ? 'text-primary-400'
+                      : 'text-text-tertiary hover:text-text-primary'
+                  }`}>
+                    <Icon className="h-5 w-5" />
+                    <span className="text-xs mt-1">{item.label}</span>
+                  </div>
+                </Link>
+              )
+            } else {
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => setIsPostModalOpen(true)}
+                  className="flex flex-col items-center justify-center h-full transition-colors text-text-tertiary hover:text-text-primary"
+                >
+                  <div className="p-1 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full">
+                    <Icon className="h-3 w-3 text-white" />
+                  </div>
+                  <span className="text-xs mt-1">{item.label}</span>
+                </button>
+              )
+            }
+          })}
+        </div>
+        {/* Safe area for iOS */}
+        <div className="h-safe-bottom bg-background-primary" />
       </div>
-      {/* Safe area for iOS */}
-      <div className="h-safe-bottom bg-background-primary" />
-    </div>
+
+      {/* Post Creation Modal */}
+      <PostCreateModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSuccess={() => setIsPostModalOpen(false)}
+      />
+    </>
   )
 }

@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title PostRegistry
@@ -11,10 +10,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * @notice This contract allows users to create posts with content stored on-chain
  */
 contract PostRegistry is Ownable, ReentrancyGuard {
-    using Counters for Counters.Counter;
 
     // Counter for unique post IDs
-    Counters.Counter private _postIds;
+    uint256 private _postIds;
 
     // Post storage fee (in wei)
     uint256 public postFee = 0.001 ether; // Very small fee for testnet
@@ -70,7 +68,7 @@ contract PostRegistry is Ownable, ReentrancyGuard {
 
     // Modifiers
     modifier validPost(uint256 _postId) {
-        require(_postId > 0 && _postId <= _postIds.current(), "Invalid post ID");
+        require(_postId > 0 && _postId <= _postIds, "Invalid post ID");
         require(!posts[_postId].isDeleted, "Post has been deleted");
         _;
     }
@@ -83,7 +81,9 @@ contract PostRegistry is Ownable, ReentrancyGuard {
     /**
      * @dev Constructor sets the contract deployer as owner
      */
-    constructor() {}
+    constructor() {
+        _postIds = 0;
+    }
 
     /**
      * @dev Create a new post
@@ -100,8 +100,8 @@ contract PostRegistry is Ownable, ReentrancyGuard {
         require(bytes(_content).length <= MAX_CONTENT_LENGTH, "Content too long");
         require(msg.value >= postFee, "Insufficient payment for post creation");
 
-        _postIds.increment();
-        uint256 newPostId = _postIds.current();
+        _postIds++;
+        uint256 newPostId = _postIds;
 
         posts[newPostId] = Post({
             id: newPostId,
@@ -186,7 +186,7 @@ contract PostRegistry is Ownable, ReentrancyGuard {
      * @return Total post count
      */
     function getTotalPosts() external view returns (uint256) {
-        return _postIds.current();
+        return _postIds;
     }
 
     /**
@@ -205,7 +205,7 @@ contract PostRegistry is Ownable, ReentrancyGuard {
      * @return Array of post IDs (newest first)
      */
     function getRecentPosts(uint256 _count) external view returns (uint256[] memory) {
-        uint256 totalPosts = _postIds.current();
+        uint256 totalPosts = _postIds;
         if (totalPosts == 0) {
             return new uint256[](0);
         }

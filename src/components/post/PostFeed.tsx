@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { usePosts } from '@/hooks/usePosts'
+import { useBlockchainPosts } from '@/hooks/useBlockchainPosts'
 import { PostItem } from './PostItem'
 import { PostCreate } from './PostCreate'
 import { Button } from '@/components/ui/Button'
@@ -44,7 +44,10 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
     refetch,
     deletePost,
     isDeleting
-  } = usePosts(queryParams)
+  } = useBlockchainPosts()
+
+  // Filter posts based on feed type (blockchain posts don't support following filtering yet)
+  const filteredPosts = posts
 
   const handleRefresh = () => {
     refetch()
@@ -149,7 +152,7 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
       </Card>
 
       {/* Posts List */}
-      {isLoading && posts.length === 0 ? (
+      {isLoading && filteredPosts.length === 0 ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="border-gray-700 bg-gray-900/50 animate-pulse">
@@ -175,9 +178,9 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
             </Card>
           ))}
         </div>
-      ) : posts.length > 0 ? (
+      ) : filteredPosts.length > 0 ? (
         <div className="space-y-4">
-          {posts.map((post) => (
+          {filteredPosts.map((post) => (
             <PostItem
               key={post.id}
               post={post}
@@ -186,7 +189,7 @@ export function PostFeed({ showCreatePost = true, initialFilter, className }: Po
           ))}
 
           {/* Load More */}
-          {posts.length >= 20 && (
+          {filteredPosts.length >= 20 && (
             <div className="text-center py-8">
               <Button
                 onClick={() => {

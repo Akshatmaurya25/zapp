@@ -3,7 +3,7 @@ import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from 
 import { parseEther, formatEther } from 'viem'
 import { useToastHelpers } from '@/components/ui/Toast'
 
-// Contract ABI - extracted key functions
+// Contract ABI - SimplePostRegistry functions
 const POST_REGISTRY_ABI = [
   {
     "inputs": [
@@ -82,6 +82,13 @@ const POST_REGISTRY_ABI = [
     ],
     "name": "hasUserLikedPost",
     "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
     "stateMutability": "view",
     "type": "function"
   }

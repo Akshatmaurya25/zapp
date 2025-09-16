@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react'
 import { useUserProfile } from '@/hooks/useUserProfile'
-import { usePosts } from '@/hooks/usePosts'
+import { usePostContract } from '@/hooks/usePostContract'
+import { useWeb3, useRequireWallet } from '@/contexts/Web3Context'
+import { useConnect } from 'wagmi'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Textarea } from '@/components/ui/Textarea'
@@ -16,7 +18,10 @@ import {
   Gamepad2,
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  Coins,
+  Wallet
 } from 'lucide-react'
 import { MediaUpload as MediaUploadType } from '@/types'
 
@@ -36,12 +41,22 @@ const gameCategories = [
 ]
 
 export function PostCreate({ onSuccess, className }: PostCreateProps) {
-  const { createPost, isCreating } = usePosts()
+  const { user } = useUserProfile()
+  const {
+    createPost: createBlockchainPost,
+    isCreating: isCreatingBlockchain,
+    postFee,
+    isContractAvailable
+  } = usePostContract()
+  const { connection, isOnSomnia, switchNetwork } = useWeb3()
+  const { needsConnection, needsNetworkSwitch, isReady } = useRequireWallet()
+  const { connect, connectors } = useConnect()
 
   const [content, setContent] = useState('')
   const [gameCategory, setGameCategory] = useState<string>('')
   const [mediaFiles, setMediaFiles] = useState<MediaUploadType[]>([])
   const [error, setError] = useState<string | null>(null)
+  const isCreating = isCreatingBlockchain
 
   const handleMediaUpload = (uploads: MediaUploadType[]) => {
     setMediaFiles(prev => [...prev, ...uploads])
@@ -50,6 +65,25 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
 
   const removeMedia = (index: number) => {
     setMediaFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleConnectWallet = async () => {
+    try {
+      const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0]
+      if (connector) {
+        await connect({ connector })
+      }
+    } catch (error) {
+      setError('Failed to connect wallet')
+    }
+  }
+
+  const handleSwitchNetwork = async () => {
+    try {
+      await switchNetwork(true) // true for testnet
+    } catch (error) {
+      setError('Failed to switch to Somnia network')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,13 +100,34 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
       return
     }
 
+    // Always create blockchain posts - check wallet requirements
+    if (!isContractAvailable) {
+      setError('Blockchain contract not available. Please check your connection.')
+      return
+    }
+
+    if (needsConnection) {
+      setError('Please connect your wallet to create blockchain posts')
+      return
+    }
+
+    if (needsNetworkSwitch) {
+      setError('Please switch to Somnia network to create blockchain posts')
+      return
+    }
+
+    if (!isReady) {
+      setError('Wallet not ready for blockchain transactions')
+      return
+    }
+
     try {
-      await createPost({
+      await createBlockchainPost({
         content: content.trim(),
-        game_category: gameCategory,
-        media_ipfs: mediaFiles
+        mediaIpfs: mediaFiles
           .filter(file => file.ipfs_hash)
-          .map(file => file.ipfs_hash!)
+          .map(file => file.ipfs_hash!)[0] || '',
+        gameCategory: gameCategory || 'general'
       })
 
       // Reset form
@@ -81,7 +136,7 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
       setMediaFiles([])
       onSuccess?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create post')
+      setError(err instanceof Error ? err.message : 'Failed to create blockchain post')
     }
   }
 

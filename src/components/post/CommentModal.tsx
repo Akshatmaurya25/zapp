@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { useComments, Comment } from '@/hooks/useComments'
-import { useToast } from '@/hooks/useToast'
+import { useToastHelpers } from '@/components/ui/Toast'
 import {
   MessageSquare,
   Send,
@@ -31,7 +31,7 @@ export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
   const { user } = useUserProfile()
   const [newComment, setNewComment] = useState('')
   const { comments, loading, error, isCreating, createComment } = useComments(post.id)
-  const { toast } = useToast()
+  const { success, error: showError } = useToastHelpers()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,18 +40,10 @@ export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
     try {
       await createComment(newComment.trim())
       setNewComment('')
-      toast({
-        title: 'Comment posted!',
-        description: 'Your comment has been added to the post',
-        variant: 'default'
-      })
+      success('Comment Posted!', 'Your comment has been added to the post')
     } catch (error) {
       console.error('Failed to create comment:', error)
-      toast({
-        title: 'Failed to post comment',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive'
-      })
+      showError('Failed to Post Comment', error instanceof Error ? error.message : 'Please try again')
     }
   }
 

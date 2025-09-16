@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/AppLayout'
 import { Section, Stack } from '@/components/ui/Container'
@@ -12,33 +12,51 @@ import {
   Sparkles,
   Shield,
   Database,
-  Zap
+  Zap,
+  Gamepad2,
+  X,
+  Upload,
+  Hash,
+  Users,
+  Globe,
+  Coins
 } from 'lucide-react'
 import Link from 'next/link'
+import { useUser } from '@/contexts/UserContext'
+import { useToast } from '@/hooks/useToast'
+import { usePosts } from '@/hooks/usePosts'
+import { usePostContract } from '@/hooks/usePostContract'
+import { GameCategory } from '@/types/post'
 
 const gameCategories: { value: GameCategory; label: string; emoji: string }[] = [
-  { value: 'general', label: 'General Gaming', emoji: '🎮' },
-  { value: 'valorant', label: 'Valorant', emoji: '🎯' },
-  { value: 'pubg', label: 'PUBG', emoji: '🔫' },
-  { value: 'fortnite', label: 'Fortnite', emoji: '🏗️' },
-  { value: 'league_of_legends', label: 'League of Legends', emoji: '⚔️' },
-  { value: 'metaverse', label: 'Metaverse Games', emoji: '🌐' },
-  { value: 'esports', label: 'Esports', emoji: '🏆' },
-  { value: 'other', label: 'Other', emoji: '🕹️' }
+  { value: GameCategory.GENERAL_GAMING, label: 'General Gaming', emoji: '🎮' },
+  { value: GameCategory.VALORANT, label: 'Valorant', emoji: '🎯' },
+  { value: GameCategory.PUBG, label: 'PUBG', emoji: '🔫' },
+  { value: GameCategory.FORTNITE, label: 'Fortnite', emoji: '🏗️' },
+  { value: GameCategory.LEAGUE_OF_LEGENDS, label: 'League of Legends', emoji: '⚔️' },
+  { value: GameCategory.METAVERSE, label: 'Metaverse Games', emoji: '🌐' },
+  { value: GameCategory.OTHER, label: 'Other', emoji: '🕹️' }
 ]
 
 export default function CreatePostPage() {
   const [content, setContent] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<GameCategory>('general')
+  const [selectedCategory, setSelectedCategory] = useState<GameCategory>(GameCategory.GENERAL_GAMING)
   const [selectedMedia, setSelectedMedia] = useState<File | null>(null)
   const [mediaPreview, setMediaPreview] = useState<string | null>(null)
   const [privacy, setPrivacy] = useState<'public' | 'followers'>('public')
   const [isUploading, setIsUploading] = useState(false)
+  const [postMode, setPostMode] = useState<'free' | 'blockchain'>('free')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
   const { toast } = useToast()
   const { createPost, isCreating } = usePosts()
+  const { 
+    createPost: createBlockchainPost, 
+    isCreating: isCreatingBlockchain, 
+    postFee, 
+    isContractAvailable 
+  } = usePostContract()
   const { user } = useUser()
 
   const handleMediaSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,15 +133,27 @@ export default function CreatePostPage() {
         mediaIPFS = await uploadMediaToIPFS(selectedMedia)
       }
 
-      await createPost({
-        content: content.trim(),
-        game_category: selectedCategory,
-        media_ipfs: mediaIPFS
-      })
+      if (postMode === 'blockchain' && isContractAvailable) {
+        // Create blockchain post - this will trigger wallet popup
+        await createBlockchainPost({
+          content: content.trim(),
+          mediaIpfs: mediaIPFS || '',
+          gameCategory: selectedCategory
+        })
+      } else {
+        // Create traditional database post
+        await createPost({
+          content: content.trim(),
+          game_category: selectedCategory,
+          media_ipfs: mediaIPFS ? [mediaIPFS] : undefined
+        })
+      }
 
       toast({
         title: 'Post created!',
-        description: 'Your post has been shared with the community',
+        description: postMode === 'blockchain' 
+          ? 'Your post has been published to the blockchain'
+          : 'Your post has been shared with the community',
         variant: 'default'
       })
 
@@ -138,7 +168,7 @@ export default function CreatePostPage() {
     }
   }
 
-  const isSubmitDisabled = isCreating || isUploading || (!content.trim() && !selectedMedia)
+  const isSubmitDisabled = isCreating || isCreatingBlockchain || isUploading || (!content.trim() && !selectedMedia)
 
   return (
     <DashboardLayout>
@@ -187,7 +217,86 @@ export default function CreatePostPage() {
                     <div className="font-medium text-gray-200">{user?.display_name}</div>
                     <div className="text-sm text-gray-400">@{user?.username}</div>
                   </div>
+                  {isContractAvailable && (
+                    <div className="ml-auto">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 rounded-full">
+                        <Zap className="h-3 w-3 text-green-400" />
+                        <span className="text-xs text-green-400 font-medium">Blockchain Ready</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Post Mode Selection */}
+                {isContractAvailable && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-300">
+                      Post Type
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPostMode('free')}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                          postMode === 'free'
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-gray-600 hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Database className="h-5 w-5 text-blue-500 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-gray-200">Free Post</h4>
+                            <p className="text-sm text-gray-400">
+                              Store in database only. Quick and free.
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPostMode('blockchain')}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                          postMode === 'blockchain'
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-gray-600 hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Shield className="h-5 w-5 text-purple-500 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-gray-200">Blockchain Post</h4>
+                            <p className="text-sm text-gray-400">
+                              Store on-chain. Verified and permanent.
+                            </p>
+                            <div className="flex items-center gap-1 mt-2">
+                              <Coins className="h-3 w-3 text-yellow-400" />
+                              <span className="text-xs text-yellow-400 font-medium">
+                                Fee: {postFee || '0.001'} STT
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+
+                    {postMode === 'blockchain' && (
+                      <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <Shield className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-400">
+                          <p className="font-medium">Blockchain Post Benefits:</p>
+                          <ul className="mt-1 space-y-1 list-disc list-inside">
+                            <li>Permanent storage on Somnia network</li>
+                            <li>Cryptographic verification</li>
+                            <li>Cannot be censored or deleted by others</li>
+                            <li>Earns you blockchain reputation</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Content Textarea */}
                 <div className="space-y-2">
@@ -327,15 +436,29 @@ export default function CreatePostPage() {
                 disabled={isSubmitDisabled}
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isCreating || isUploading ? (
+                {isCreating || isCreatingBlockchain || isUploading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    {isUploading ? 'Uploading...' : 'Posting...'}
+                    {isUploading 
+                      ? 'Uploading...' 
+                      : postMode === 'blockchain' 
+                        ? 'Publishing to Blockchain...' 
+                        : 'Creating Post...'
+                    }
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Share Post
+                    {postMode === 'blockchain' ? (
+                      <>
+                        <Shield className="h-4 w-4" />
+                        Publish to Blockchain
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        Share Post
+                      </>
+                    )}
                   </div>
                 )}
               </Button>
