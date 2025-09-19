@@ -35,7 +35,7 @@ export function AchievementGrid() {
       checkFollowerMilestoneAchievement(50)
       checkFollowerMilestoneAchievement(100)
     }
-  }, [user, achievements?.length])
+  }, [user, achievements, checkFirstPostAchievement, checkFirstDonationAchievement, checkFollowerMilestoneAchievement])
 
   if (isLoading) {
     return (

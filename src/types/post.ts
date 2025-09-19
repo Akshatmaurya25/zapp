@@ -3,6 +3,7 @@ export interface Post {
   user_id: string
   content: string
   media_ipfs: string[] | null
+  media_types: string[] | null
   game_category: string
   likes_count: number
   donations_count: number
@@ -14,6 +15,7 @@ export interface Post {
     username: string | null
     display_name: string | null
     avatar_ipfs: string | null
+    wallet_address?: string
     is_verified?: boolean
   }
   is_liked_by_user?: boolean
@@ -23,6 +25,7 @@ export interface Post {
 export interface CreatePostData {
   content: string
   media_ipfs?: string[]
+  media_types?: string[]
   game_category: string
 }
 

@@ -22,6 +22,29 @@ export async function GET(
 
     const supabase = createServerClient()
 
+    // Handle both UUID and integer formats
+    let queryPostId = postId
+    // If it's a simple integer, try to find the post first
+    if (/^\d+$/.test(postId)) {
+      // For integer IDs, we need to check if the posts table uses UUIDs or integers
+      // Let's try both approaches
+      try {
+        // First try direct integer match
+        const { data: checkPost } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('id', parseInt(postId))
+          .single()
+
+        if (checkPost) {
+          queryPostId = checkPost.id
+        }
+      } catch {
+        // If that fails, the ID might not exist
+        console.log('Post with integer ID not found:', postId)
+      }
+    }
+
     // Fetch comments for the post
     const { data: comments, error } = await supabase
       .from('comments')
@@ -29,7 +52,7 @@ export async function GET(
         *,
         user:users(id, username, display_name, avatar_ipfs, is_verified)
       `)
-      .eq('post_id', postId)
+      .eq('post_id', queryPostId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -43,7 +66,6 @@ export async function GET(
     }
 
     return NextResponse.json({
-      success: true,
       comments: comments || [],
       pagination: {
         page,

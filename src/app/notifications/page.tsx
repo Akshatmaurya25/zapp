@@ -1,9 +1,8 @@
 'use client'
 
 import { DashboardLayout } from '@/components/layout/AppLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { useNotifications, Notification } from '@/hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
 import {

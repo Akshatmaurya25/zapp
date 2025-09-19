@@ -9,7 +9,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { useFaucet, useTestnetBalance } from '@/hooks/useFaucet'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Loading, InlineLoading } from '@/components/ui/Loading'
 import { Stack, Flex, Container, Section } from '@/components/ui/Container'
@@ -172,6 +172,30 @@ function ProfileContent() {
   const { user } = useUser()
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'achievements'>('profile')
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(user?.wallet_address || '')
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = user?.wallet_address || ''
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
 
   if (!user) return null
 
@@ -219,18 +243,18 @@ function ProfileContent() {
             <CardContent className="p-6">
               <div className="text-center space-y-4">
                 <div className="relative inline-block">
-                  <Avatar className="h-24 w-24 mx-auto border-2 border-primary-500/30 shadow-glow">
-                    {user.avatar_ipfs ? (
-                      <AvatarImage
-                        src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`}
-                        alt={user.display_name || user.username || 'User avatar'}
-                      />
-                    ) : (
-                      <AvatarFallback className="bg-gradient-to-r from-primary-500 to-secondary-500">
-                        <User className="h-12 w-12 text-white" />
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+                  <Avatar
+                    src={user.avatar_ipfs ? (
+                      user.avatar_ipfs.startsWith('http')
+                        ? user.avatar_ipfs
+                        : `https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`
+                    ) : undefined}
+                    alt={user.display_name || user.username || 'User avatar'}
+                    fallbackText={user.display_name || user.username || 'U'}
+                    identifier={user.id || user.username || user.wallet_address}
+                    size="xl"
+                    className="h-24 w-24 mx-auto border-2 border-primary-500/30 shadow-glow"
+                  />
                   {user.is_verified && (
                     <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1 border-2 border-gray-900">
                       <CheckCircle className="h-4 w-4 text-white" />
@@ -282,12 +306,24 @@ function ProfileContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigator.clipboard.writeText(user.wallet_address)}
-                    className="h-auto p-1 text-gray-400 hover:text-white"
+                    onClick={handleCopyAddress}
+                    className={`h-auto p-1 transition-colors ${
+                      copySuccess
+                        ? 'text-green-400 hover:text-green-300'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                    disabled={copySuccess}
                   >
-                    <Copy className="h-3 w-3" />
+                    {copySuccess ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
                   </Button>
                 </div>
+                {copySuccess && (
+                  <div className="text-xs text-green-400 mt-1">Address copied!</div>
+                )}
               </div>
               <div>
                 <div className="text-xs text-gray-400">Joined</div>

@@ -1,23 +1,18 @@
 'use client'
 
 import { DashboardLayout } from '@/components/layout/AppLayout'
-import { Container, Section, Stack } from '@/components/ui/Container'
+import { Section, Stack } from '@/components/ui/Container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 import {
   Users,
-  MessageSquare,
   Calendar,
-  MapPin,
   Trophy,
   TrendingUp,
   Plus,
-  Crown,
-  Star,
-  Gamepad2,
-  Zap
+  Gamepad2
 } from 'lucide-react'
 import { useState } from 'react'
 

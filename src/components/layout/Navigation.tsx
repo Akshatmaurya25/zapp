@@ -2,21 +2,20 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useWallet } from '@/hooks/useWallet'
 import { useUser } from '@/contexts/UserContext'
 import { Button } from '@/components/ui/Button'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/Avatar'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { PostCreateModal } from '@/components/post/PostCreateModal'
 import { formatAddress } from '@/lib/web3'
+import { formatIPFSUrl } from '@/lib/utils'
+import { Logo } from '@/components/ui/Logo'
 import {
-  Zap,
   Home,
   User,
-  MessageSquare,
   Trophy,
-  Bell,
   Search,
   Plus,
   Wallet,
@@ -25,24 +24,38 @@ import {
   X,
   TrendingUp,
   Users,
-  Coins,
-  Sparkles
+  Sparkles,
+  Play,
+  Video,
+  ChevronDown
 } from 'lucide-react'
 
 export function Navigation() {
-  const { address, disconnectWallet, chain, isConnected } = useWallet()
+  const { address, disconnectWallet, isConnected } = useWallet()
   const { user } = useUser()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false)
+  const [isStreamingDropdownOpen, setIsStreamingDropdownOpen] = useState(false)
 
   if (!isConnected) return null
 
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home', active: pathname === '/dashboard' },
     { href: '/feed', icon: TrendingUp, label: 'Feed', active: pathname === '/feed' },
-    { href: '/discover', icon: Search, label: 'Discover', active: pathname === '/discover' },
     { href: '/community', icon: Users, label: 'Community', active: pathname === '/community' },
+    {
+      href: '/streams',
+      icon: Play,
+      label: 'Streaming',
+      active: pathname.startsWith('/stream'),
+      hasDropdown: true,
+      dropdownItems: [
+        { href: '/streams', label: 'Live Streams', icon: Play },
+        { href: '/streaming/dashboard', label: 'My Streams', icon: Video }
+      ]
+    },
+    { href: '/discover', icon: Search, label: 'Discover', active: pathname === '/discover' },
     { href: '/achievements', icon: Trophy, label: 'Achievements', active: pathname === '/achievements' },
   ]
 
@@ -53,19 +66,50 @@ export function Navigation() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl">
-              <Zap className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-text-primary">
-              Zapp
-            </span>
-          </Link>
+          <Logo size="md" />
 
           {/* Navigation Items */}
           <div className="flex items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon
+
+              if (item.hasDropdown) {
+                return (
+                  <div key={item.href} className="relative">
+                    <Button
+                      variant={item.active ? "secondary" : "ghost"}
+                      size="sm"
+                      className={`gap-2 ${item.active ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                      onClick={() => setIsStreamingDropdownOpen(!isStreamingDropdownOpen)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+
+                    {isStreamingDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-48 bg-background-primary border border-border-primary rounded-lg shadow-lg z-50">
+                        {item.dropdownItems?.map((dropdownItem) => {
+                          const DropdownIcon = dropdownItem.icon
+                          return (
+                            <Link key={dropdownItem.href} href={dropdownItem.href}>
+                              <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-2 text-text-secondary hover:text-text-primary hover:bg-background-secondary"
+                                onClick={() => setIsStreamingDropdownOpen(false)}
+                              >
+                                <DropdownIcon className="h-4 w-4" />
+                                {dropdownItem.label}
+                              </Button>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
               return (
                 <Link key={item.href} href={item.href}>
                   <Button
@@ -99,23 +143,21 @@ export function Navigation() {
             {user && (
               <div className="flex items-center gap-3">
                 <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                  <Avatar className="h-8 w-8 border border-gray-600">
-                    {user.avatar_ipfs ? (
-                      <AvatarImage 
-                        src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`}
-                        alt={user.display_name || user.username || 'User avatar'}
-                      />
-                    ) : (
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+                  <Avatar
+                    src={formatIPFSUrl(user.avatar_ipfs)}
+                    alt={user.display_name || user.username || 'User avatar'}
+                    fallbackText={user.display_name || user.username || 'U'}
+                    identifier={user.id || user.username || user.wallet_address}
+                    size="md"
+                    className="h-8 w-8 border border-gray-600"
+                  />
                   <div className="text-sm">
                     <div className="text-text-primary font-medium">{user.display_name}</div>
                     <div className="text-text-tertiary">@{user.username}</div>
                   </div>
                 </Link>
+
+                
 
                 <div className="flex items-center gap-2 px-2 py-1 bg-background-tertiary rounded-lg text-xs">
                   <Wallet className="h-3 w-3 text-text-tertiary" />
@@ -141,12 +183,7 @@ export function Navigation() {
         <div className="px-4 h-16 flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-text-primary">Zapp</span>
-          </Link>
+          <Logo size="sm" />
 
           {/* Mobile Menu Button */}
           <Button
@@ -199,13 +236,14 @@ export function Navigation() {
                 <div className="border-t border-border-secondary pt-3 space-y-3">
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-background-tertiary transition-colors">
-                      <Avatar className="h-10 w-10">
-                        {user.avatar_ipfs ? (
-                          <AvatarImage src={`https://gateway.pinata.cloud/ipfs/${user.avatar_ipfs}`} />
-                        ) : (
-                          <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
-                        )}
-                      </Avatar>
+                      <Avatar
+                        src={formatIPFSUrl(user.avatar_ipfs)}
+                        alt={user.display_name || user.username || 'User'}
+                        fallbackText={user.display_name || user.username || 'U'}
+                        identifier={user.id || user.username || user.wallet_address}
+                        size="lg"
+                        className="h-10 w-10"
+                      />
                       <div>
                         <div className="text-text-primary font-medium">{user.display_name}</div>
                         <div className="text-text-tertiary text-sm">@{user.username}</div>

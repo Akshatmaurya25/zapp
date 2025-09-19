@@ -27,7 +27,7 @@ export function WalletGuard({
   // Show wallet connection if needed
   if (needsConnection || needsNetworkSwitch) {
     return (
-      <div className="min-h-screen bg-background-primary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background-primary flex items-center justify-center ">
         {fallback || <WalletConnect />}
       </div>
     )

@@ -148,8 +148,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       // Update the cache with the new user
       queryClient.setQueryData(["user", address], newUser);
 
-      // Trigger achievement for first login
-      triggerFirstLoginAchievement(newUser.id);
+      // Trigger achievement tracking for new user login
+      trackUserLogin(newUser.id);
     },
   });
 
@@ -194,40 +194,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  // Trigger first login achievement
-  const triggerFirstLoginAchievement = async (userId: string) => {
+  // Track user login for achievement system
+  const trackUserLogin = async (userId: string) => {
     try {
-      // Check if user already has first login achievement
-      const { data: existingAchievement } = await supabase
-        .from("achievements")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("achievement_type", "first_login")
-        .single();
-
-      if (!existingAchievement) {
-        // Create first login achievement
-        await supabase.from("achievements").insert([
-          {
-            user_id: userId,
-            achievement_type: "first_login",
-            metadata: {
-              name: "Welcome to Zapp!",
-              description:
-                "Successfully connected your wallet and joined the community",
-              image_ipfs: "", // Add default achievement image
-              rarity: "common",
-              category: "milestone",
-            },
-          },
-        ]);
-      }
+      // Use the new achievement tracking API
+      await fetch('/api/users/track-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
     } catch (error) {
-      console.error("Failed to create first login achievement:", error);
+      console.error("Failed to track user login for achievements:", error);
     }
   };
 
-  // Update last active timestamp
+  // Update last active timestamp and track login
   useEffect(() => {
     if (user && isConnected) {
       const updateLastActive = async () => {
@@ -236,6 +217,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           .update({ last_active_at: new Date().toISOString() })
           .eq("id", user.id);
       };
+
+      // Track login for achievement system (for existing users)
+      trackUserLogin(user.id);
 
       updateLastActive();
 

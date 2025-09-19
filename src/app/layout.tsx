@@ -4,7 +4,6 @@ import "./globals.css";
 import { Web3Provider } from "@/contexts/Web3Context";
 import { UserProvider } from "@/contexts/UserContext";
 import { ToastProvider } from "@/components/ui/Toast";
-import { ContractDebug } from "@/components/debug/ContractDebug";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +17,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Zapp - Next Gen Social Platform",
-  description: "A Web3 social platform for the Somnia ecosystem where gamers share content, earn rewards, and collect achievement NFTs",
+  description:
+    "A Web3 social platform for the Somnia ecosystem where gamers share content, earn rewards, and collect achievement NFTs",
+  icons: {
+    icon: "/svglogo.svg",
+    shortcut: "/svglogo.svg",
+    apple: "/svglogo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -33,10 +38,7 @@ export default function RootLayout({
       >
         <Web3Provider>
           <UserProvider>
-            <ToastProvider>
-              {children}
-              <ContractDebug />
-            </ToastProvider>
+            <ToastProvider>{children}</ToastProvider>
           </UserProvider>
         </Web3Provider>
       </body>

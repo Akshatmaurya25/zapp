@@ -1,7 +1,7 @@
 'use client'
 
 import { DashboardLayout } from '@/components/layout/AppLayout'
-import { Container, Section, Stack } from '@/components/ui/Container'
+import { Section, Stack } from '@/components/ui/Container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -11,12 +11,10 @@ import {
   TrendingUp,
   Users,
   Hash,
-  Clock,
   Heart,
   MessageSquare,
   Share,
-  Gamepad2,
-  Filter
+  Gamepad2
 } from 'lucide-react'
 import { useState } from 'react'
 

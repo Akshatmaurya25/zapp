@@ -1,49 +1,58 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { useWallet } from '@/hooks/useWallet'
-import { WelcomeLanding } from './WelcomeLanding'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Wallet, AlertCircle, Loader2 } from 'lucide-react'
+import React from "react";
+import { useWallet } from "@/hooks/useWallet";
+import { WelcomeLanding } from "./WelcomeLanding";
+import { Button } from "@/components/ui/Button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
+import { Wallet, AlertCircle, Loader2 } from "lucide-react";
 
 interface WalletConnectProps {
-  onConnect?: () => void
-  showLanding?: boolean
+  onConnect?: () => void;
+  showLanding?: boolean;
 }
 
-export function WalletConnect({ onConnect, showLanding = true }: WalletConnectProps) {
-  const { 
-    connectWallet, 
-    isConnecting, 
-    connectors, 
+export function WalletConnect({
+  onConnect,
+  showLanding = true,
+}: WalletConnectProps) {
+  const {
+    connectWallet,
+    isConnecting,
+    connectors,
     error,
     switchToSomnia,
     isOnSomnia,
     isConnected,
-    connectionRejected
-  } = useWallet()
+    connectionRejected,
+  } = useWallet();
 
   // Show welcome landing page by default
   if (showLanding && !isConnected) {
-    return <WelcomeLanding onConnect={onConnect} />
+    return <WelcomeLanding onConnect={onConnect} />;
   }
 
   const handleConnect = async (connectorId?: string) => {
     try {
-      await connectWallet(connectorId)
-      onConnect?.()
+      await connectWallet(connectorId);
+      onConnect?.();
     } catch (err) {
-      console.error('Connection failed:', err)
+      console.error("Connection failed:", err);
     }
-  }
+  };
 
   const handleNetworkSwitch = async () => {
-    const success = await switchToSomnia()
+    const success = await switchToSomnia();
     if (success && onConnect) {
-      onConnect()
+      onConnect();
     }
-  }
+  };
 
   // If connected but wrong network
   if (isConnected && !isOnSomnia) {
@@ -59,14 +68,14 @@ export function WalletConnect({ onConnect, showLanding = true }: WalletConnectPr
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
+          <Button
             onClick={handleNetworkSwitch}
             className="w-full"
             disabled={isConnecting}
           >
             Switch to Somnia Network
           </Button>
-          <Button 
+          <Button
             onClick={() => switchToSomnia(true)}
             variant="outline"
             className="w-full"
@@ -76,7 +85,7 @@ export function WalletConnect({ onConnect, showLanding = true }: WalletConnectPr
           </Button>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -103,28 +112,28 @@ export function WalletConnect({ onConnect, showLanding = true }: WalletConnectPr
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               connector.icon && (
-                <img 
-                  src={connector.icon} 
-                  alt={connector.name} 
-                  className="h-5 w-5" 
+                <img
+                  src={connector.icon}
+                  alt={connector.name}
+                  className="h-5 w-5"
                 />
               )
             )}
-            {isConnecting ? 'Connecting...' : `Connect ${connector.name}`}
+            {isConnecting ? "Connecting..." : `Connect ${connector.name}`}
           </Button>
         ))}
-        
+
         {error && (
           <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
             {error}
           </div>
         )}
-        
+
         <div className="text-xs text-gray-500 text-center space-y-1">
           <p>By connecting your wallet, you agree to our Terms of Service</p>
           <p>Zapp will auto-add Somnia network if not present</p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

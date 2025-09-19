@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { AchievementTracker } from '@/lib/achievement-tracker'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
           user_id: body.user_id,
           content: body.content,
           media_ipfs: body.media_ipfs || null,
+          media_types: body.media_types || null,
           game_category: body.game_category || 'general',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -55,6 +57,19 @@ export async function POST(request: NextRequest) {
         { error: `Failed to create post: ${error.message}` },
         { status: 500 }
       )
+    }
+
+    // Track achievement for post creation
+    try {
+      await AchievementTracker.onUserAction(body.user_id, 'POST_CREATED', {
+        postId: data.id,
+        postType: body.game_category === 'general' ? 'general' : 'gaming',
+        gameGenre: body.game_category !== 'general' ? body.game_category : undefined,
+        isScreenshot: body.media_ipfs ? true : false
+      })
+    } catch (achievementError) {
+      console.error('Achievement tracking error:', achievementError)
+      // Don't fail the post creation if achievement tracking fails
     }
 
     return NextResponse.json({ post: data }, { status: 201 })

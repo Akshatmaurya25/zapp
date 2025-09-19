@@ -1,25 +1,21 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/layout/AppLayout'
 import { Section, Stack } from '@/components/ui/Container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { BlockchainPostCreate } from '@/components/post/BlockchainPostCreate'
 import {
-  ArrowLeft,
   Sparkles,
   Shield,
-  Database,
   Zap,
   Gamepad2,
   X,
   Upload,
   Hash,
   Users,
-  Globe,
-  Coins
+  Globe
 } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/contexts/UserContext'
@@ -45,7 +41,6 @@ export default function CreatePostPage() {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null)
   const [privacy, setPrivacy] = useState<'public' | 'followers'>('public')
   const [isUploading, setIsUploading] = useState(false)
-  const [postMode, setPostMode] = useState<'free' | 'blockchain'>('free')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
@@ -133,27 +128,16 @@ export default function CreatePostPage() {
         mediaIPFS = await uploadMediaToIPFS(selectedMedia)
       }
 
-      if (postMode === 'blockchain' && isContractAvailable) {
-        // Create blockchain post - this will trigger wallet popup
-        await createBlockchainPost({
-          content: content.trim(),
-          mediaIpfs: mediaIPFS || '',
-          gameCategory: selectedCategory
-        })
-      } else {
-        // Create traditional database post
-        await createPost({
-          content: content.trim(),
-          game_category: selectedCategory,
-          media_ipfs: mediaIPFS ? [mediaIPFS] : undefined
-        })
-      }
+      // Create post (this will save to both DB and blockchain if available)
+      await createPost({
+        content: content.trim(),
+        game_category: selectedCategory,
+        media_ipfs: mediaIPFS ? [mediaIPFS] : undefined
+      })
 
       toast({
         title: 'Post created!',
-        description: postMode === 'blockchain' 
-          ? 'Your post has been published to the blockchain'
-          : 'Your post has been shared with the community',
+        description: 'Your post has been shared with the community and saved to blockchain if available',
         variant: 'default'
       })
 
@@ -227,74 +211,14 @@ export default function CreatePostPage() {
                   )}
                 </div>
 
-                {/* Post Mode Selection */}
+                {/* Blockchain Info */}
                 {isContractAvailable && (
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-300">
-                      Post Type
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setPostMode('free')}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                          postMode === 'free'
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-gray-600 hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Database className="h-5 w-5 text-blue-500 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-gray-200">Free Post</h4>
-                            <p className="text-sm text-gray-400">
-                              Store in database only. Quick and free.
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPostMode('blockchain')}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                          postMode === 'blockchain'
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-gray-600 hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Shield className="h-5 w-5 text-purple-500 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-gray-200">Blockchain Post</h4>
-                            <p className="text-sm text-gray-400">
-                              Store on-chain. Verified and permanent.
-                            </p>
-                            <div className="flex items-center gap-1 mt-2">
-                              <Coins className="h-3 w-3 text-yellow-400" />
-                              <span className="text-xs text-yellow-400 font-medium">
-                                Fee: {postFee || '0.001'} STT
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
+                  <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <Shield className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-400">
+                      <p className="font-medium">Automatic Blockchain Storage:</p>
+                      <p className="mt-1">Your posts are automatically saved to both our database and the Somnia blockchain for permanent, verified storage.</p>
                     </div>
-
-                    {postMode === 'blockchain' && (
-                      <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <Shield className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-blue-400">
-                          <p className="font-medium">Blockchain Post Benefits:</p>
-                          <ul className="mt-1 space-y-1 list-disc list-inside">
-                            <li>Permanent storage on Somnia network</li>
-                            <li>Cryptographic verification</li>
-                            <li>Cannot be censored or deleted by others</li>
-                            <li>Earns you blockchain reputation</li>
-                          </ul>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -439,26 +363,15 @@ export default function CreatePostPage() {
                 {isCreating || isCreatingBlockchain || isUploading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    {isUploading 
-                      ? 'Uploading...' 
-                      : postMode === 'blockchain' 
-                        ? 'Publishing to Blockchain...' 
-                        : 'Creating Post...'
+                    {isUploading
+                      ? 'Uploading...'
+                      : 'Creating Post...'
                     }
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    {postMode === 'blockchain' ? (
-                      <>
-                        <Shield className="h-4 w-4" />
-                        Publish to Blockchain
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="h-4 w-4" />
-                        Share Post
-                      </>
-                    )}
+                    <Zap className="h-4 w-4" />
+                    Share Post
                   </div>
                 )}
               </Button>

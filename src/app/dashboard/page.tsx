@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { PostFeed } from '@/components/post'
-import { Container, GridContainer, Section, Stack } from '@/components/ui/Container'
+import { GridContainer, Section, Stack } from '@/components/ui/Container'
 import {
   MessageSquare,
   Heart,
@@ -70,9 +70,9 @@ function DashboardContent() {
         </Stack>
       </Section>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - 2x2 Layout */}
       <Section>
-        <GridContainer cols="4" gap="lg">
+        <GridContainer cols="2" gap="lg" className="max-w-4xl mx-auto">
           <StatsCard
             title="Posts Created"
             value={user?.posts_count || 0}

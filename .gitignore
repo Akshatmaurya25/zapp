@@ -43,3 +43,39 @@ next-env.d.ts
 #docs
 /docs
 /.claude/
+
+# streaming-server
+/streaming-server/node_modules
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+.DS_Store?
+ehthumbs.db
+Icon?
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# ESLint cache
+.eslintcache
+
+# Temporary folders
+tmp/
+temp/

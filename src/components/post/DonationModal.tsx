@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useWallet } from "@/hooks/useWallet";
 import { useToast } from "@/hooks/useToast";
 import { formatAddress } from "@/lib/web3";
+import { formatIPFSUrl } from "@/lib/utils";
 import {
   Coins,
   Gift,
@@ -61,32 +62,50 @@ export function DonationModal({ post, isOpen, onClose }: DonationModalProps) {
       return;
     }
 
+    // Check if we have the recipient's wallet address
+    if (!post.user?.wallet_address) {
+      toast({
+        title: "Cannot send tip",
+        description: "Recipient wallet address not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsProcessing(true);
 
-      // Convert ETH amount to Wei (for Somnia network)
+      // Convert amount to Wei (18 decimal places for Somnia network)
       const amountInWei = BigInt(Math.floor(parseFloat(donationAmount) * 1e18));
 
-      // For now, we'll use a simple transfer to a fallback address
-      // In a real implementation, you'd need to store and fetch the user's donation wallet address
-      sendTransaction({
-        to: "0x0000000000000000000000000000000000000000", // Fallback address - needs proper implementation
-        value: amountInWei,
-        data: "0x", // Empty data for simple transfer
+      console.log('Sending tip:', {
+        to: post.user.wallet_address,
+        amount: donationAmount,
+        amountInWei: amountInWei.toString()
       });
 
-      // For now, we'll simulate success without waiting for transaction
-      // In a real implementation, you'd wait for transaction confirmation
+      // Send the transaction
+      const result = await sendTransaction({
+        to: post.user.wallet_address as `0x${string}`,
+        value: amountInWei,
+      });
 
-      // Simulate recording the donation in the database
-      // await recordDonation({
-      //   postId: post.id,
-      //   fromUserId: address,
-      //   toUserId: post.user_id,
-      //   amount: donationAmount,
-      //   message: message,
-      //   transactionHash: 'simulated-hash'
-      // })
+      console.log('Transaction result:', result);
+
+      // Record the donation in the database
+      try {
+        await recordDonation({
+          postId: post.id,
+          fromUserId: address,
+          toUserId: post.user_id,
+          amount: donationAmount,
+          message: message,
+          transactionHash: result.hash || 'pending'
+        });
+      } catch (dbError) {
+        console.warn('Failed to record donation in database:', dbError);
+        // Don't fail the whole process if database recording fails
+      }
 
       toast({
         title: "Tip sent!",
@@ -99,10 +118,21 @@ export function DonationModal({ post, isOpen, onClose }: DonationModalProps) {
       setMessage("");
     } catch (error) {
       console.error("Donation failed:", error);
+
+      let errorMessage = "Please try again";
+      if (error instanceof Error) {
+        if (error.message.includes('rejected')) {
+          errorMessage = "Transaction was cancelled";
+        } else if (error.message.includes('insufficient')) {
+          errorMessage = "Insufficient balance for this transaction";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
         title: "Donation failed",
-        description:
-          error instanceof Error ? error.message : "Please try again",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -130,7 +160,7 @@ export function DonationModal({ post, isOpen, onClose }: DonationModalProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -144,18 +174,13 @@ export function DonationModal({ post, isOpen, onClose }: DonationModalProps) {
         <div className="space-y-6">
           {/* Recipient Info */}
           <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-lg">
-            <Avatar className="h-10 w-10">
-              {post.user?.avatar_ipfs ? (
-                <AvatarImage
-                  src={`https://gateway.pinata.cloud/ipfs/${post.user.avatar_ipfs}`}
-                  alt={post.user.display_name || "User"}
-                />
-              ) : (
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <Avatar
+              src={formatIPFSUrl(post.user?.avatar_ipfs)}
+              alt={post.user?.display_name || "User"}
+              fallbackText={post.user?.display_name || post.user?.username || "U"}
+              identifier={post.user?.id || post.user?.username || undefined}
+              className="h-10 w-10"
+            />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-200">

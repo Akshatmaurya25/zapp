@@ -173,14 +173,21 @@ export function usePosts(params?: QueryParams) {
         throw new Error('User must be logged in to delete posts')
       }
 
-      const { error } = await supabase
-        .from('posts')
-        .update({ is_deleted: true })
-        .eq('id', postId)
-        .eq('user_id', user.id) // Ensure user can only delete their own posts
+      // Use API route to bypass RLS
+      const response = await fetch('/api/posts/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          post_id: postId,
+        })
+      })
 
-      if (error) {
-        throw new Error(`Failed to delete post: ${error.message}`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete post')
       }
     },
     onSuccess: () => {

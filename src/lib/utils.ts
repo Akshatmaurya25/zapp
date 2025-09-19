@@ -125,6 +125,55 @@ export function isVideoFile(file: File): boolean {
 }
 
 /**
+ * Format IPFS URL with fallback gateways
+ */
+export function formatIPFSUrl(hash: string | null | undefined): string | undefined {
+  if (!hash || hash.trim() === '') {
+    return undefined
+  }
+
+  // Remove common prefixes
+  const cleanHash = hash.trim()
+    .replace(/^ipfs:\/\//, '')
+    .replace(/^\/ipfs\//, '')
+    .replace(/^https?:\/\/[^\/]+\/ipfs\//, '')
+
+  // Validate hash format - accept both CIDv0 (Qm...) and CIDv1 formats
+  if (cleanHash.length < 10 || !cleanHash.match(/^[a-zA-Z0-9]+$/)) {
+    return undefined
+  }
+
+  // Check if it's already a valid IPFS hash format
+  if (cleanHash.startsWith('Qm') || cleanHash.startsWith('baf') || cleanHash.match(/^[a-z2-7]{59}$/)) {
+    // Try multiple IPFS gateways for better reliability
+    const gateways = [
+      'https://gateway.pinata.cloud/ipfs',
+      'https://ipfs.io/ipfs',
+      'https://cloudflare-ipfs.com/ipfs',
+      'https://dweb.link/ipfs'
+    ]
+
+    const url = `${gateways[0]}/${cleanHash}`
+    return url
+  }
+
+  return undefined
+}
+
+/**
+ * Generate a placeholder avatar URL based on user identifier
+ */
+export function generatePlaceholderAvatar(identifier: string | null | undefined, style: string = 'identicon'): string {
+  if (!identifier) {
+    identifier = 'anonymous'
+  }
+
+  // Use DiceBear service for consistent placeholder avatars
+  const seed = encodeURIComponent(identifier.toLowerCase().trim())
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=6366f1,8b5cf6,ec4899,06d6a0,f59e0b&size=200`
+}
+
+/**
  * Format blockchain address for display
  */
 export function formatAddress(address: string, startLength = 6, endLength = 4): string {

@@ -37,6 +37,7 @@ export interface Toast {
 interface ToastContextValue {
   toasts: Toast[];
   addToast: (toast: Omit<Toast, "id">) => string;
+  showToast: (toast: Omit<Toast, "id">) => string;
   removeToast: (id: string) => void;
   clearToasts: () => void;
 }
@@ -101,7 +102,7 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
 
   return (
     <ToastContext.Provider
-      value={{ toasts, addToast, removeToast, clearToasts }}
+      value={{ toasts, addToast, showToast: addToast, removeToast, clearToasts }}
     >
       {children}
       <ToastContainer />
@@ -120,7 +121,7 @@ function ToastContainer() {
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
+    <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
       ))}
@@ -185,7 +186,7 @@ function ToastItem({ toast }: ToastItemProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 p-4 rounded-lg border shadow-2xl backdrop-blur-md",
+        "z-[100] flex items-start gap-3 p-4 rounded-lg border shadow-2xl backdrop-blur-md",
         "transition-all duration-200 transform",
         "ring-1 ring-white/10", // Add subtle ring for better visibility
         getColorClasses(),

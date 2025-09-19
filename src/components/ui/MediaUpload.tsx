@@ -121,7 +121,7 @@ export function MediaUpload({
             <Card key={upload.id} className="p-3">
               <div className="flex items-center gap-3">
                 <div className="flex-shrink-0">
-                  {upload.type === 'image' ? (
+                  {upload.type.startsWith('image/') ? (
                     <Image className="h-6 w-6 text-blue-400" />
                   ) : (
                     <Video className="h-6 w-6 text-purple-400" />
@@ -176,7 +176,7 @@ export function MediaUpload({
 // Media preview component
 interface MediaPreviewProps {
   ipfsHash: string
-  type: 'image' | 'video'
+  type: string // Accept MIME type string
   alt?: string
   className?: string
 }
@@ -203,7 +203,7 @@ export function MediaPreview({ ipfsHash, type, alt, className = '' }: MediaPrevi
     )
   }
 
-  if (type === 'image') {
+  if (type.startsWith('image/')) {
     return (
       <img
         src={currentUrl}
@@ -214,7 +214,7 @@ export function MediaPreview({ ipfsHash, type, alt, className = '' }: MediaPrevi
     )
   }
 
-  if (type === 'video') {
+  if (type.startsWith('video/')) {
     return (
       <video
         src={currentUrl}

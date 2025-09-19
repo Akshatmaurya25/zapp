@@ -14,27 +14,28 @@ export function useSocial() {
     mutationFn: async ({ userId, isFollowing }: { userId: string; isFollowing: boolean }) => {
       if (!user) throw new Error('User must be logged in')
 
-      if (isFollowing) {
-        // Unfollow
-        const { error } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', user.id)
-          .eq('following_id', userId)
+      const action = isFollowing ? 'unfollow' : 'follow'
 
-        if (error) throw new Error(`Failed to unfollow: ${error.message}`)
-      } else {
-        // Follow
-        const { error } = await supabase
-          .from('follows')
-          .insert([{
-            follower_id: user.id,
-            following_id: userId,
-          }])
+      const response = await fetch('/api/follows/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({
+          followingId: userId,
+          action: action
+        })
+      })
 
-        if (error) throw new Error(`Failed to follow: ${error.message}`)
+      const result = await response.json()
 
-        // Trigger achievement for first follow
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to toggle follow')
+      }
+
+      // Trigger achievement for first follow
+      if (action === 'follow') {
         await triggerFirstFollowAchievement(user.id)
       }
 

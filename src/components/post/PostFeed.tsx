@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useBlockchainPosts } from "@/hooks/useBlockchainPosts";
+import { usePosts } from "@/hooks/usePosts";
 import { PostItem } from "./PostItem";
 import { PostCreate } from "./PostCreate";
 import { Button } from "@/components/ui/Button";
@@ -44,9 +44,9 @@ export function PostFeed({
   };
 
   const { posts, isLoading, isError, error, refetch, deletePost, isDeleting } =
-    useBlockchainPosts();
+    usePosts(queryParams);
 
-  // Filter posts based on feed type (blockchain posts don't support following filtering yet)
+  // Filter posts based on feed type
   const filteredPosts = posts;
 
   const handleRefresh = () => {
@@ -75,7 +75,7 @@ export function PostFeed({
             <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-semibold">Failed to load posts</p>
             <p className="text-sm text-gray-400 mt-2">
-              {error?.message || "Unknown error occurred"}
+              {typeof error === 'string' ? error : error?.message || "Unknown error occurred"}
             </p>
           </div>
           <Button
@@ -188,23 +188,7 @@ export function PostFeed({
           {filteredPosts.map((post) => (
             <PostItem
               key={post.id}
-              post={
-                {
-                  ...post,
-                  user_id: post.author,
-                  likes_count: post.likesCount,
-                  donations_count: 0, // Not available in blockchain posts
-                  comments_count: post.commentsCount,
-                  updated_at: post.created_at,
-                  user: {
-                    id: post.user.address,
-                    username: post.user.username,
-                    display_name: post.user.display_name,
-                    avatar_ipfs: post.user.avatar_ipfs || null,
-                    is_verified: post.user.is_verified,
-                  },
-                } as unknown as Post
-              }
+              post={post}
               onDelete={handleDeletePost}
             />
           ))}

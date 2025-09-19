@@ -14,15 +14,15 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300"
         onClick={() => onOpenChange(false)}
       />
 
       {/* Dialog content */}
-      <div className="relative z-10">
+      <div className="relative z-10 animate-slideUp">
         {children}
       </div>
     </div>
@@ -37,7 +37,7 @@ interface DialogContentProps {
 export function DialogContent({ children, className }: DialogContentProps) {
   return (
     <div className={cn(
-      'bg-gray-900 border border-gray-700 rounded-lg shadow-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto',
+      'bg-gray-950/95 border border-gray-700/80 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto backdrop-blur-xl',
       className
     )}>
       {children}
@@ -68,5 +68,29 @@ export function DialogTitle({ children, className }: DialogTitleProps) {
     <h2 className={cn('text-lg font-semibold text-gray-200', className)}>
       {children}
     </h2>
+  )
+}
+
+interface DialogTriggerProps {
+  children: React.ReactNode
+  asChild?: boolean
+  className?: string
+  onClick?: () => void
+}
+
+export function DialogTrigger({ children, asChild, className, onClick }: DialogTriggerProps) {
+  if (asChild) {
+    // Clone the child element and add onClick
+    const element = children as React.ReactElement
+    return React.cloneElement(element, {
+      onClick: onClick,
+      className: cn(className, element.props?.className)
+    })
+  }
+
+  return (
+    <button onClick={onClick} className={className}>
+      {children}
+    </button>
   )
 }

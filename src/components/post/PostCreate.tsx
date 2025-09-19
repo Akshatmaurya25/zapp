@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { usePostContract } from '@/hooks/usePostContract'
+import { usePosts } from '@/hooks/usePosts'
 import { useWeb3, useRequireWallet } from '@/contexts/Web3Context'
 import { useConnect } from 'wagmi'
 import { Button } from '@/components/ui/Button'
@@ -48,6 +49,7 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
     postFee,
     isContractAvailable
   } = usePostContract()
+  const { createPost: createDbPost, isCreating: isCreatingDb } = usePosts()
   const { connection, isOnSomnia, switchNetwork } = useWeb3()
   const { needsConnection, needsNetworkSwitch, isReady } = useRequireWallet()
   const { connect, connectors } = useConnect()
@@ -56,7 +58,7 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
   const [gameCategory, setGameCategory] = useState<string>('')
   const [mediaFiles, setMediaFiles] = useState<MediaUploadType[]>([])
   const [error, setError] = useState<string | null>(null)
-  const isCreating = isCreatingBlockchain
+  const isCreating = isCreatingBlockchain || isCreatingDb
 
   const handleMediaUpload = (uploads: MediaUploadType[]) => {
     setMediaFiles(prev => [...prev, ...uploads])
@@ -100,35 +102,45 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
       return
     }
 
-    // Always create blockchain posts - check wallet requirements
-    if (!isContractAvailable) {
-      setError('Blockchain contract not available. Please check your connection.')
+    if (!user) {
+      setError('Please log in to create posts')
       return
     }
 
-    if (needsConnection) {
-      setError('Please connect your wallet to create blockchain posts')
-      return
-    }
+    const mediaArray = mediaFiles
+      .filter(file => file.ipfs_hash)
+      .map(file => file.ipfs_hash!)
 
-    if (needsNetworkSwitch) {
-      setError('Please switch to Somnia network to create blockchain posts')
-      return
-    }
+    const mediaTypesArray = mediaFiles
+      .filter(file => file.ipfs_hash)
+      .map(file => file.type)
 
-    if (!isReady) {
-      setError('Wallet not ready for blockchain transactions')
-      return
+    const postData = {
+      content: content.trim(),
+      media_ipfs: mediaArray.length > 0 ? mediaArray : undefined,
+      media_types: mediaTypesArray.length > 0 ? mediaTypesArray : undefined,
+      game_category: gameCategory || 'general'
     }
 
     try {
-      await createBlockchainPost({
-        content: content.trim(),
-        mediaIpfs: mediaFiles
-          .filter(file => file.ipfs_hash)
-          .map(file => file.ipfs_hash!)[0] || '',
-        gameCategory: gameCategory || 'general'
-      })
+      // Create post in database first
+      const dbPost = await createDbPost(postData)
+
+      // Then try to save to blockchain if wallet is connected and ready
+      if (isContractAvailable && !needsConnection && !needsNetworkSwitch && isReady) {
+        try {
+          await createBlockchainPost({
+            content: postData.content,
+            mediaIpfs: mediaArray[0] || '',
+            gameCategory: postData.game_category
+          })
+        } catch (blockchainError) {
+          console.warn('Blockchain post creation failed, but DB post was successful:', blockchainError)
+          // Don't fail the entire operation if blockchain fails
+        }
+      } else {
+        console.log('Blockchain not available, post saved to database only')
+      }
 
       // Reset form
       setContent('')
@@ -136,7 +148,7 @@ export function PostCreate({ onSuccess, className }: PostCreateProps) {
       setMediaFiles([])
       onSuccess?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create blockchain post')
+      setError(err instanceof Error ? err.message : 'Failed to create post')
     }
   }
 

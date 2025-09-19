@@ -6,10 +6,8 @@ import {
   MessageSquare,
   Coins,
   Shield,
-  Gamepad2,
   Sparkles,
-  TrendingUp,
-  Gift
+  TrendingUp
 } from 'lucide-react'
 
 export default function AuthPage() {

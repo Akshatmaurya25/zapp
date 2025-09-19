@@ -72,36 +72,41 @@ export function StatsCard({
   const styles = colorClasses[color]
 
   return (
-    <Card className={`relative overflow-hidden cyber-card border-2 ${styles.border} ${styles.glow} hover-lift group`}>
+    <Card
+      variant="gaming"
+      className={`relative overflow-hidden border-2 ${styles.border} ${styles.glow} hover-lift group min-h-[140px] flex flex-col`}
+    >
       {/* Scan line effect */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-current to-transparent opacity-50 animate-pulse" />
 
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-3">
-            <p className="text-sm text-gray-300 font-medium tracking-wide uppercase">
+      <CardContent className="p-6 flex-1 flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
+          {/* Left Content */}
+          <div className="space-y-3 flex-1 min-w-0">
+            <p className="text-sm text-gray-300 font-semibold tracking-wider uppercase mb-1">
               {title}
             </p>
             <div className="space-y-2">
-              <p className={`text-3xl font-black ${styles.text} tracking-tight`}>
+              <p className={`text-3xl lg:text-4xl font-black ${styles.text} tracking-tight leading-none`}>
                 {value}
               </p>
               {subtitle && (
-                <p className="text-xs text-gray-400 font-medium">{subtitle}</p>
+                <p className="text-xs text-gray-400 font-medium leading-tight">{subtitle}</p>
               )}
               {trend && (
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-bold ${trend.value > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className={`text-sm font-bold px-2 py-1 rounded-full ${trend.value > 0 ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'}`}>
                     {trend.value > 0 ? '↗' : '↘'} {trend.value > 0 ? '+' : ''}{trend.value}%
                   </span>
-                  <span className="text-xs text-gray-500">{trend.label}</span>
+                  <span className="text-xs text-gray-500 font-medium">{trend.label}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className={`relative p-4 rounded-2xl bg-gradient-to-br ${styles.gradient} ${styles.bg} border ${styles.border} group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className={`h-7 w-7 text-white drop-shadow-lg`} />
+          {/* Right Icon */}
+          <div className={`relative p-4 lg:p-5 rounded-2xl bg-gradient-to-br ${styles.gradient} ${styles.bg} border ${styles.border} group-hover:scale-110 transition-all duration-300 ml-4 shrink-0`}>
+            <Icon className="h-7 w-7 lg:h-8 lg:w-8 text-white drop-shadow-lg" />
             {/* Glow effect on icon */}
             <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${styles.gradient} opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300`} />
           </div>

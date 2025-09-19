@@ -14,7 +14,7 @@ export function useIPFS() {
   ): Promise<MediaUpload> => {
     const uploadId = `${file.name}-${Date.now()}`
     const preview = URL.createObjectURL(file)
-    const type = file.type.startsWith('image/') ? 'image' : 'video'
+    const type = file.type // Store the actual MIME type
 
     // Create initial upload state
     const initialUpload: MediaUpload = {
