@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
                      Math.random().toString(36).substring(2, 15) +
                      Date.now().toString(36)
 
-    // Create stream record in database
+    // Create stream record in database - set as active so streamers can configure OBS
     const { data: stream, error } = await supabase
       .from('live_streams')
       .insert([
@@ -44,11 +44,12 @@ export async function POST(request: NextRequest) {
           stream_key: streamKey,
           title: title || 'Gaming Stream',
           game_name: game_name || null,
-          is_active: false,
+          is_active: true, // Set to true so streamers can immediately use RTMP details
           viewer_count: 0,
           total_tips: 0,
           rtmp_url: `rtmp://localhost:1935/live/${streamKey}`,
-          hls_url: `http://localhost:8000/live/${streamKey}/index.m3u8`
+          hls_url: `http://localhost:8000/live/${streamKey}/index.m3u8`,
+          started_at: new Date().toISOString() // Set start time when created
         }
       ])
       .select()

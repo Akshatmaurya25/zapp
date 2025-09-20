@@ -590,6 +590,26 @@ button, input, textarea, select {
   background: var(--gray-500);
 }
 
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-600) var(--background-secondary);
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gray-600);
+  border-radius: 3px;
+  border: 1px solid var(--background-secondary);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-500);
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   body {

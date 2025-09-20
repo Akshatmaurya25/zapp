@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/Card'
+import Link from 'next/link'
+import Image from 'next/image'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
@@ -17,7 +19,8 @@ import {
   Play,
   Users,
   Gamepad2,
-  TrendingUp
+  Radio,
+  Zap
 } from 'lucide-react'
 import { streamingService, Stream, formatViewerCount, formatStreamDuration } from '@/lib/streaming'
 import { useToast } from '@/components/ui/Toast'
@@ -41,52 +44,23 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
   const router = useRouter()
   const { showToast } = useToast()
 
-  useEffect(() => {
-    fetchStreams()
-
-    // Set up real-time updates
-    const socket = streamingService.connectSocket()
-
-    streamingService.onStreamStarted(() => {
-      fetchStreams()
-    })
-
-    streamingService.onStreamEnded(() => {
-      fetchStreams()
-    })
-
-    streamingService.onViewerCountUpdate((data) => {
-      setStreams(prev => prev.map(stream =>
-        stream.stream_key === data.streamKey
-          ? { ...stream, viewer_count: data.viewerCount }
-          : stream
-      ))
-    })
-
-    return () => {
-      streamingService.offStreamStarted()
-      streamingService.offStreamEnded()
-      streamingService.offViewerCountUpdate()
-    }
-  }, [])
-
-  useEffect(() => {
-    applyFiltersAndSort()
-  }, [streams, searchQuery, sortBy, categoryFilter])
-
-  const fetchStreams = async () => {
+  const fetchStreams = useCallback(async () => {
     try {
       const { streams: fetchedStreams } = await streamingService.getStreams(showActiveOnly, 50)
+      console.log('Fetched streams for browser:', fetchedStreams)
+      fetchedStreams.forEach(stream => {
+        console.log(`Stream ${stream.stream_key} user data:`, stream.users)
+      })
       setStreams(fetchedStreams)
-    } catch (error) {
-      console.error('Failed to fetch streams:', error)
+    } catch (err) {
+      console.error('Failed to fetch streams:', err)
       showToast({ title: 'Failed to fetch streams', type: 'error' })
     } finally {
       setLoading(false)
     }
-  }
+  }, [showActiveOnly, showToast])
 
-  const applyFiltersAndSort = () => {
+  const applyFiltersAndSort = useCallback(() => {
     let filtered = [...streams]
 
     // Apply search filter
@@ -141,7 +115,40 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
     })
 
     setFilteredStreams(filtered)
-  }
+  }, [streams, searchQuery, sortBy, categoryFilter])
+
+  useEffect(() => {
+    fetchStreams()
+
+    // Set up real-time updates
+    streamingService.connectSocket()
+
+    streamingService.onStreamStarted(() => {
+      fetchStreams()
+    })
+
+    streamingService.onStreamEnded(() => {
+      fetchStreams()
+    })
+
+    streamingService.onViewerCountUpdate((data) => {
+      setStreams(prev => prev.map(stream =>
+        stream.stream_key === data.streamKey
+          ? { ...stream, viewer_count: data.viewerCount }
+          : stream
+      ))
+    })
+
+    return () => {
+      streamingService.offStreamStarted()
+      streamingService.offStreamEnded()
+      streamingService.offViewerCountUpdate()
+    }
+  }, [showActiveOnly, showToast])
+
+  useEffect(() => {
+    applyFiltersAndSort()
+  }, [streams, searchQuery, sortBy, categoryFilter])
 
   const watchStream = (streamKey: string) => {
     router.push(`/stream/${streamKey}`)
@@ -166,11 +173,11 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
     return (
       <div className="space-y-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-8 bg-surface-secondary rounded w-1/4"></div>
+          <div className="h-4 bg-surface-secondary rounded w-1/2"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+              <div key={i} className="h-64 bg-surface-secondary rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -179,118 +186,152 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Play className="w-6 h-6 text-red-600" />
-            Live Streams
-          </h1>
-          <p className="text-gray-600">
-            {filteredStreams.length} {showActiveOnly ? 'live' : ''} streams available
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
+            {showActiveOnly ? 'Live Streams' : 'All Streams'}
+          </h2>
+          <p className="text-text-secondary">
+            {showActiveOnly
+              ? 'Watch live gaming content and support streamers with crypto tips'
+              : 'Browse all streams including recently ended ones'
+            }
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Quick Actions */}
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
-            size="sm"
+            variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
+            className="border-border-primary text-text-secondary hover:text-text-primary"
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </Button>
-          <Button onClick={() => fetchStreams()}>
-            Refresh
-          </Button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters Section */}
       {showFilters && (
-        <Card className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search streams, games, or streamers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        <Card className="border-border-primary bg-surface-secondary">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-text-secondary">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                  <Input
+                    placeholder="Search streams, games, or streamers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-background-primary border-border-primary text-text-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-text-secondary">Category</label>
+                <Select
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  className="bg-background-primary border-border-primary text-text-primary"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="just-chatting">Just Chatting</option>
+                  <option value="creative">Creative</option>
+                  <option value="music">Music</option>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-text-secondary">Sort By</label>
+                <Select
+                  value={sortBy}
+                  onChange={setSortBy}
+                  className="bg-background-primary border-border-primary text-text-primary"
+                >
+                  <option value="viewers">Most Viewers</option>
+                  <option value="recent">Recently Started</option>
+                  <option value="tips">Highest Tips</option>
+                  <option value="duration">Longest Duration</option>
+                </Select>
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Sort By</label>
-              <Select
-                value={sortBy}
-                onValueChange={(value: SortOption) => setSortBy(value)}
-              >
-                <option value="viewers">Most Viewers</option>
-                <option value="recent">Recently Started</option>
-                <option value="tips">Most Tips</option>
-                <option value="duration">Longest Running</option>
-              </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Category</label>
-              <Select
-                value={categoryFilter}
-                onValueChange={(value: CategoryFilter) => setCategoryFilter(value)}
-              >
-                <option value="all">All Categories</option>
-                <option value="gaming">Gaming</option>
-                <option value="just-chatting">Just Chatting</option>
-                <option value="creative">Creative</option>
-                <option value="music">Music</option>
-              </Select>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       )}
 
-      {/* Stream Grid */}
-      {filteredStreams.length === 0 ? (
-        <Card className="p-8 text-center">
-          <div className="max-w-md mx-auto">
-            <Play className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">
-              {streams.length === 0 ? 'No streams available' : 'No streams match your filters'}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {streams.length === 0
-                ? 'Be the first to start streaming!'
-                : 'Try adjusting your search or filters'
-              }
-            </p>
-            {searchQuery && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery('')
-                  setCategoryFilter('all')
-                }}
-              >
-                Clear Filters
-              </Button>
-            )}
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Stream Grid Results */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-text-primary">
+            {filteredStreams.length} {showActiveOnly ? 'live' : ''} streams found
+          </h3>
+          <Button
+            variant="outline"
+            onClick={() => fetchStreams()}
+            className="border-border-primary text-text-secondary hover:text-text-primary"
+          >
+            Refresh
+          </Button>
+        </div>
+
+        {/* Stream Grid */}
+        {filteredStreams.length === 0 ? (
+          <Card className="border-border-primary bg-surface-secondary">
+            <CardContent className="p-12 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center">
+                <Radio className="w-10 h-10 text-purple-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-text-primary">
+                {streams.length === 0 ? 'No live streams right now' : 'No streams match your filters'}
+              </h3>
+              <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                {streams.length === 0
+                  ? 'Be the first to go live! Create a stream and start broadcasting to the community.'
+                  : 'Try adjusting your search terms or clearing some filters to see more results.'
+                }
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {streams.length === 0 ? (
+                  <Link href="/streaming/dashboard">
+                    <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                      <Zap className="w-4 h-4 mr-2" />
+                      Start Streaming
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('')
+                      setCategoryFilter('all')
+                      setSortBy('viewers')
+                    }}
+                    className="border-border-primary text-text-secondary hover:text-text-primary"
+                  >
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredStreams.map((stream) => (
-            <Card key={stream.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={stream.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border-primary bg-surface-secondary">
               {/* Thumbnail */}
               <div className="relative aspect-video bg-gray-900">
-                <img
+                <Image
                   src={getStreamThumbnail(stream)}
                   alt={stream.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
 
                 {/* Live indicator */}
@@ -328,25 +369,36 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
               {/* Stream Info */}
               <div className="p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <Avatar className="w-10 h-10 flex-shrink-0">
+                  <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-purple-500/20">
                     {stream.users?.avatar_ipfs ? (
                       <img
                         src={`https://gateway.pinata.cloud/ipfs/${stream.users.avatar_ipfs}`}
                         alt="Streamer"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          console.error('Avatar loading failed for stream browser:', stream.stream_key, 'IPFS hash:', stream.users?.avatar_ipfs)
+                          e.currentTarget.style.display = 'none'
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                          if (fallback) fallback.style.display = 'flex'
+                        }}
+                        onLoad={() => {
+                          console.log('Avatar loaded successfully for stream browser:', stream.stream_key)
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium">
-                        {(stream.users?.display_name || stream.users?.username || 'U')[0].toUpperCase()}
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium rounded-full"
+                      style={{ display: stream.users?.avatar_ipfs ? 'none' : 'flex' }}
+                    >
+                      {(stream.users?.display_name || stream.users?.username || 'U')[0].toUpperCase()}
+                    </div>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate" title={stream.title}>
+                    <h3 className="font-medium truncate text-text-primary" title={stream.title}>
                       {stream.title}
                     </h3>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-text-secondary truncate">
                       {stream.users?.display_name || stream.users?.username || 'Unknown Streamer'}
                     </p>
                   </div>
@@ -355,7 +407,7 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
                 {/* Game/Category */}
                 {stream.game_name && (
                   <div className="flex items-center gap-2">
-                    <Gamepad2 className="w-4 h-4 text-gray-400" />
+                    <Gamepad2 className="w-4 h-4 text-purple-400" />
                     <span
                       className={`px-2 py-1 rounded text-xs text-white ${getCategoryColor(stream.game_name)}`}
                     >
@@ -365,7 +417,7 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center justify-between text-sm text-text-secondary">
                   <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
@@ -380,7 +432,7 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
                   <Button
                     size="sm"
                     onClick={() => watchStream(stream.stream_key)}
-                    className="ml-2"
+                    className="ml-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     Watch
                   </Button>
@@ -388,17 +440,18 @@ export default function StreamBrowser({ showActiveOnly = true }: StreamBrowserPr
               </div>
             </Card>
           ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Load More */}
-      {filteredStreams.length > 0 && filteredStreams.length >= 20 && (
-        <div className="text-center">
-          <Button variant="outline" onClick={() => fetchStreams()}>
-            Load More Streams
-          </Button>
-        </div>
-      )}
+        {/* Load More */}
+        {filteredStreams.length > 0 && filteredStreams.length >= 20 && (
+          <div className="text-center">
+            <Button variant="outline" onClick={() => fetchStreams()}>
+              Load More Streams
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

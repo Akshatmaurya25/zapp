@@ -13,6 +13,7 @@ interface VideoPlayerProps {
   onLoadStart?: () => void
   onError?: (error: any) => void
   onCanPlay?: () => void
+  onTimeout?: () => void
 }
 
 export default function VideoPlayer({
@@ -22,23 +23,59 @@ export default function VideoPlayer({
   autoplay = true,
   onLoadStart,
   onError,
-  onCanPlay
+  onCanPlay,
+  onTimeout
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const retryCountRef = useRef(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [volume, setVolume] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showControls, setShowControls] = useState(false)
+  const [hasTimedOut, setHasTimedOut] = useState(false)
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video || !src) return
+    if (!video || !src) {
+      console.log('VideoPlayer: No video element or source provided')
+      setError('No video source available')
+      setIsLoading(false)
+      return
+    }
 
+    // Check if the source is a valid URL
+    if (!src.startsWith('http://') && !src.startsWith('https://')) {
+      console.log('VideoPlayer: Invalid source URL:', src)
+      setError('Invalid video source')
+      setIsLoading(false)
+      return
+    }
+
+    // Reset state for new src
     setIsLoading(true)
     setError(null)
+    setHasTimedOut(false)
+    retryCountRef.current = 0
+
+    // Clear existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
+    // Set timeout for HLS loading (60 seconds)
+    timeoutRef.current = setTimeout(() => {
+      console.log('VideoPlayer: HLS loading timeout reached')
+      setHasTimedOut(true)
+      setIsLoading(false)
+      setError('Stream transcoding unavailable. Switching to live view...')
+      if (onTimeout) {
+        onTimeout()
+      }
+    }, 60000)
 
     if (onLoadStart) {
       onLoadStart()
@@ -68,7 +105,13 @@ export default function VideoPlayer({
       hls.attachMedia(video)
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Clear timeout on successful load
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+          timeoutRef.current = null
+        }
         setIsLoading(false)
+        setError(null)
         if (autoplay) {
           video.play().catch(console.error)
         }
@@ -78,23 +121,49 @@ export default function VideoPlayer({
       })
 
       hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS Error:', data)
-        if (data.fatal) {
+        console.warn('HLS Error (expected during setup):', data.details)
+        if (data.fatal && !hasTimedOut) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              setError('Network error occurred while loading stream')
-              hls.startLoad()
+              if (data.details === 'manifestLoadError') {
+                retryCountRef.current += 1
+                if (retryCountRef.current <= 5) {
+                  setError('Video transcoding in progress. Please wait...')
+                  // Retry with exponential backoff
+                  const retryDelay = Math.min(3000 * retryCountRef.current, 15000)
+                  setTimeout(() => {
+                    if (!hasTimedOut && hlsRef.current) {
+                      console.log(`Retrying HLS manifest load... (attempt ${retryCountRef.current + 1})`)
+                      hls.startLoad()
+                    }
+                  }, retryDelay)
+                } else {
+                  console.log('Max retry attempts reached for HLS manifest')
+                  setError('Stream transcoding taking longer than expected. Switching to live view...')
+                  if (onTimeout) {
+                    onTimeout()
+                  }
+                }
+              } else {
+                setError('Stream is not ready yet. Please wait for the streamer to start broadcasting.')
+                setTimeout(() => {
+                  if (!hasTimedOut && hlsRef.current) {
+                    hls.startLoad()
+                  }
+                }, 5000)
+              }
               break
             case Hls.ErrorTypes.MEDIA_ERROR:
               setError('Media error occurred while playing stream')
               hls.recoverMediaError()
               break
             default:
-              setError('Critical error occurred')
+              setError('Stream is setting up. Please wait a moment...')
               hls.destroy()
               break
           }
-          if (onError) {
+          // Don't call onError for expected manifest load errors during setup
+          if (onError && data.details !== 'manifestLoadError') {
             onError(data)
           }
         }
@@ -116,6 +185,10 @@ export default function VideoPlayer({
       })
 
       return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current)
+          timeoutRef.current = null
+        }
         hls.destroy()
         hlsRef.current = null
       }
@@ -137,7 +210,15 @@ export default function VideoPlayer({
         onError(new Error('HLS not supported'))
       }
     }
-  }, [src, autoplay, onLoadStart, onError, onCanPlay])
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+  }, [src, autoplay, onLoadStart, onError, onCanPlay, onTimeout, hasTimedOut])
 
   const togglePlay = () => {
     const video = videoRef.current

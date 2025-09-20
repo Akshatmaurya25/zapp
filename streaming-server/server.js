@@ -6,7 +6,7 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 const fs = require('fs-extra');
-require('dotenv').config({ path: '../.env.local' });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
 // Initialize Express app
 const app = express();
@@ -51,39 +51,34 @@ const nmsConfig = {
     allow_origin: '*',
     mediaroot: './media'
   },
-  // HTTPS disabled for development - uncomment and add certificates for production
-  // https: {
-  //   port: 8443,
-  //   key: './privatekey.pem',
-  //   cert: './certificate.pem'
-  // },
+  // Enable HLS transcoding
   relay: {
-    ffmpeg: process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg',
+    ffmpeg: process.env.FFMPEG_PATH || 'ffmpeg',
     tasks: [
       {
         app: 'live',
         mode: 'push',
-        edge: 'rtmp://127.0.0.1/live_hls'
-      }
-    ]
-  },
-  fission: {
-    ffmpeg: process.env.FFMPEG_PATH || '/usr/local/bin/ffmpeg',
-    tasks: [
-      {
-        rule: 'live/*',
-        model: [
-          {
-            ab: '128k',
-            vb: '1500k',
-            vs: '1280x720',
-            vf: '30'
-          }
-        ]
+        edge: 'rtmp://127.0.0.1/hls'
       }
     ]
   }
 };
+
+// Check FFmpeg availability
+let ffmpegAvailable = false;
+const { exec } = require('child_process');
+
+exec('ffmpeg -version', (error) => {
+  if (error) {
+    console.log('⚠️  FFmpeg not found - RTMP streaming only');
+    console.log('📺 To enable video playback, install FFmpeg:');
+    console.log('   Windows: winget install "FFmpeg (Essentials Build)"');
+    console.log('   Or download from: https://ffmpeg.org/download.html');
+  } else {
+    ffmpegAvailable = true;
+    console.log('✅ FFmpeg detected - Video transcoding enabled');
+  }
+});
 
 // Initialize NodeMediaServer
 const nms = new NodeMediaServer(nmsConfig);
@@ -91,6 +86,7 @@ const nms = new NodeMediaServer(nmsConfig);
 // Stream state management
 const activeStreams = new Map();
 const streamViewers = new Map();
+const hlsProcesses = new Map();
 
 // Utility functions
 function generateStreamKey() {
@@ -128,7 +124,8 @@ async function updateStreamStatus(streamKey, isActive, stats = {}) {
     if (isActive) {
       updateData.started_at = new Date().toISOString();
       updateData.rtmp_url = `rtmp://localhost:1935/live/${streamKey}`;
-      updateData.hls_url = `http://localhost:8000/live/${streamKey}/index.m3u8`;
+      // Only set HLS URL if FFmpeg is available for transcoding
+      updateData.hls_url = ffmpegAvailable ? `http://localhost:8000/hls/${streamKey}/index.m3u8` : null;
     } else {
       updateData.ended_at = new Date().toISOString();
     }
@@ -143,6 +140,69 @@ async function updateStreamStatus(streamKey, isActive, stats = {}) {
     }
   } catch (error) {
     console.error('Update stream status error:', error);
+  }
+}
+
+function startHLSTranscoding(streamKey) {
+  // Wait a moment for the stream to be fully established
+  setTimeout(() => {
+    const hlsOutputPath = path.join(__dirname, 'media', 'hls', streamKey);
+    fs.ensureDirSync(hlsOutputPath);
+
+    const ffmpegArgs = [
+      '-i', `rtmp://127.0.0.1:1935/live${streamKey}/${streamKey}`,
+      '-c:v', 'libx264',
+      '-c:a', 'aac',
+      '-f', 'hls',
+      '-hls_time', '2',
+      '-hls_list_size', '10',
+      '-hls_flags', 'delete_segments',
+      '-preset', 'veryfast',
+      '-tune', 'zerolatency',
+      '-g', '30',
+      '-sc_threshold', '0',
+      '-loglevel', 'info',
+      path.join(hlsOutputPath, 'index.m3u8')
+    ];
+
+    console.log(`🎬 Starting HLS transcoding for stream: ${streamKey}`);
+    console.log(`📁 Output directory: ${hlsOutputPath}`);
+    console.log(`🔧 FFmpeg command: ffmpeg ${ffmpegArgs.join(' ')}`);
+
+    const ffmpegProcess = exec(`ffmpeg ${ffmpegArgs.join(' ')}`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`FFmpeg error for ${streamKey}:`, error);
+      }
+    });
+
+    ffmpegProcess.stdout?.on('data', (data) => {
+      console.log(`FFmpeg ${streamKey} stdout:`, data.toString());
+    });
+
+    ffmpegProcess.stderr?.on('data', (data) => {
+      console.log(`FFmpeg ${streamKey} stderr:`, data.toString());
+    });
+
+    ffmpegProcess.on('exit', (code) => {
+      console.log(`FFmpeg process for ${streamKey} exited with code ${code}`);
+    });
+
+    hlsProcesses.set(streamKey, ffmpegProcess);
+  }, 3000); // Wait 3 seconds for stream to establish
+}
+
+function stopHLSTranscoding(streamKey) {
+  const process = hlsProcesses.get(streamKey);
+  if (process) {
+    console.log(`🛑 Stopping HLS transcoding for stream: ${streamKey}`);
+    process.kill('SIGTERM');
+    hlsProcesses.delete(streamKey);
+
+    // Clean up HLS files
+    const hlsOutputPath = path.join(__dirname, 'media', 'hls', streamKey);
+    if (fs.existsSync(hlsOutputPath)) {
+      fs.removeSync(hlsOutputPath);
+    }
   }
 }
 
@@ -174,13 +234,20 @@ nms.on('prePublish', async (id, StreamPath, args) => {
     return;
   }
 
-  console.log('Stream authenticated:', streamKey);
+  console.log('✅ Stream authenticated:', streamKey, 'Title:', stream.title);
   activeStreams.set(streamKey, {
     id,
     streamPath: StreamPath,
     startTime: Date.now(),
     stream: stream
   });
+
+  console.log('📊 Active streams count:', activeStreams.size);
+
+  // Start HLS transcoding if FFmpeg is available
+  if (ffmpegAvailable) {
+    startHLSTranscoding(streamKey);
+  }
 
   // Update database
   await updateStreamStatus(streamKey, true);
@@ -192,6 +259,8 @@ nms.on('prePublish', async (id, StreamPath, args) => {
     title: stream.title,
     streamer: stream.streamer_id
   });
+
+  console.log('🔔 Notified viewers of stream start for:', streamKey);
 });
 
 nms.on('postPublish', (id, StreamPath, args) => {
@@ -207,6 +276,9 @@ nms.on('donePublish', async (id, StreamPath, args) => {
   if (streamInfo) {
     const duration = Date.now() - streamInfo.startTime;
     const viewerCount = streamViewers.get(streamKey)?.size || 0;
+
+    // Stop HLS transcoding
+    stopHLSTranscoding(streamKey);
 
     // Update database with final stats
     await updateStreamStatus(streamKey, false, {
@@ -305,6 +377,31 @@ app.get('/api/streams/:streamKey', async (req, res) => {
   } catch (error) {
     console.error('Error fetching stream:', error);
     res.status(500).json({ error: 'Failed to fetch stream' });
+  }
+});
+
+// New endpoint for checking stream status
+app.get('/api/streams/:streamKey/status', (req, res) => {
+  try {
+    const { streamKey } = req.params;
+
+    const isReceivingContent = activeStreams.has(streamKey);
+    const viewerCount = streamViewers.get(streamKey)?.size || 0;
+    const streamInfo = activeStreams.get(streamKey);
+
+    console.log(`Status check for ${streamKey}: receiving=${isReceivingContent}, viewers=${viewerCount}`);
+
+    res.json({
+      streamKey,
+      isReceivingContent,
+      isLive: isReceivingContent,
+      viewerCount,
+      startTime: streamInfo?.startTime || null,
+      uptime: streamInfo ? Date.now() - streamInfo.startTime : 0
+    });
+  } catch (error) {
+    console.error('Error checking stream status:', error);
+    res.status(500).json({ error: 'Failed to check stream status' });
   }
 });
 

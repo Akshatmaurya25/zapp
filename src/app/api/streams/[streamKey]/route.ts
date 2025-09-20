@@ -11,16 +11,7 @@ export async function GET(
 
     const { data: stream, error } = await supabase
       .from('live_streams')
-      .select(`
-        *,
-        users:streamer_id (
-          id,
-          username,
-          display_name,
-          avatar_ipfs,
-          wallet_address
-        )
-      `)
+      .select('*')
       .eq('stream_key', streamKey)
       .single()
 
@@ -30,6 +21,13 @@ export async function GET(
         { status: 404 }
       )
     }
+
+    // Fetch user data separately
+    const { data: user } = await supabase
+      .from('users')
+      .select('id, username, display_name, avatar_ipfs, wallet_address')
+      .eq('id', stream.streamer_id)
+      .single()
 
     // Get real-time data from streaming server
     let liveData = {
@@ -52,7 +50,8 @@ export async function GET(
 
     return NextResponse.json({
       ...stream,
-      ...liveData
+      ...liveData,
+      users: user
     })
   } catch (error) {
     console.error('Stream fetch error:', error)

@@ -12,15 +12,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('live_streams')
-      .select(`
-        *,
-        users:streamer_id (
-          id,
-          username,
-          display_name,
-          avatar_ipfs
-        )
-      `)
+      .select('*')
       .order('started_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -38,9 +30,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Manually fetch user data for each stream
+    const streamsWithUsers = await Promise.all(
+      streams.map(async (stream) => {
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .select('id, username, display_name, avatar_ipfs')
+          .eq('id', stream.streamer_id)
+          .single()
+
+        if (userError) {
+          console.error('Failed to fetch user for stream:', stream.stream_key, 'Error:', userError)
+        } else {
+          console.log('Fetched user for stream:', stream.stream_key, 'User:', user)
+        }
+
+        return {
+          ...stream,
+          users: user || null
+        }
+      })
+    )
+
     // Fetch real-time viewer counts from streaming server
     const streamsWithViewers = await Promise.all(
-      streams.map(async (stream) => {
+      streamsWithUsers.map(async (stream) => {
         try {
           const response = await fetch(`http://localhost:9000/api/streams/${stream.stream_key}`)
           if (response.ok) {

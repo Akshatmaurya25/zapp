@@ -18,6 +18,8 @@
     "setup:nft": "hardhat run scripts/setup-nft-blockchain.js --network somnia-testnet",
     "deploy:nft": "hardhat run scripts/deploy-achievement-nft.js --network somnia-testnet",
     "streaming-server": "node streaming-server/server.js",
+    "check-ffmpeg": "node scripts/check-ffmpeg.js",
+    "setup-streaming": "npm run check-ffmpeg && npm run streaming-server",
     "deploy:streaming": "hardhat run scripts/deploy-streaming-contracts.js --network somnia-testnet"
   },
   "dependencies": {
