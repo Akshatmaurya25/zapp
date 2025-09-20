@@ -35,6 +35,9 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
   const [isFollowing, setIsFollowing] = useState(false)
   const [isReceivingContent, setIsReceivingContent] = useState(false)
   const [hlsFailed, setHlsFailed] = useState(false)
+  const [watchTime, setWatchTime] = useState(0) // in seconds
+  const [chatMessages, setChatMessages] = useState<Array<{id: string, user: string, message: string, timestamp: Date}>>([])
+  const [chatMessage, setChatMessage] = useState('')
 
   const router = useRouter()
   const { showToast } = useToast()
@@ -43,9 +46,25 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
     fetchStream()
     fetchTips()
 
+    // Add some sample chat messages for demonstration
+    const sampleMessages = [
+      { id: '1', user: 'CryptoGamer42', message: 'Great stream! Love your setup! 🎮', timestamp: new Date(Date.now() - 300000) },
+      { id: '2', user: 'StreamFan', message: 'First time watching, this is amazing!', timestamp: new Date(Date.now() - 240000) },
+      { id: '3', user: 'NFTCollector', message: 'Can\'t wait to earn those NFT milestones! 💎', timestamp: new Date(Date.now() - 180000) },
+      { id: '4', user: 'Web3Dev', message: 'The future of streaming is here! 🚀', timestamp: new Date(Date.now() - 120000) },
+    ]
+    setChatMessages(sampleMessages)
+
     // Set up real-time updates
     const socket = streamingService.connectSocket()
     streamingService.joinStream(streamKey)
+
+    // Watch time tracking
+    const watchTimeInterval = setInterval(() => {
+      if (stream?.is_active && stream?.is_live) {
+        setWatchTime(prev => prev + 1)
+      }
+    }, 1000)
 
     // Check for streaming content every 5 seconds
     const checkStreamingContent = async () => {
@@ -104,6 +123,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
     return () => {
       clearInterval(contentCheckInterval)
+      clearInterval(watchTimeInterval)
       streamingService.leaveStream(streamKey)
       streamingService.offViewerCountUpdate()
       streamingService.offNewTip()
@@ -168,6 +188,40 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
       title: isFollowing ? 'Unfollowed streamer' : 'Now following streamer!',
       type: 'success'
     })
+  }
+
+  const sendChatMessage = () => {
+    if (!chatMessage.trim()) return
+
+    const newMessage = {
+      id: Date.now().toString(),
+      user: 'You', // This would be the current user's name
+      message: chatMessage.trim(),
+      timestamp: new Date()
+    }
+
+    setChatMessages(prev => [...prev, newMessage])
+    setChatMessage('')
+
+    // Here you would emit the message to the socket
+    // streamingService.sendChatMessage(streamKey, newMessage)
+  }
+
+  const formatWatchTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const getNFTMilestones = () => {
+    return [
+      { time: 300, label: 'Early Bird NFT', icon: '🐦', unlocked: watchTime >= 300 }, // 5 minutes
+      { time: 900, label: 'Dedicated Viewer NFT', icon: '👀', unlocked: watchTime >= 900 }, // 15 minutes
+      { time: 1800, label: 'Loyal Fan NFT', icon: '💎', unlocked: watchTime >= 1800 }, // 30 minutes
+      { time: 3600, label: 'Super Fan NFT', icon: '⭐', unlocked: watchTime >= 3600 }, // 1 hour
+      { time: 7200, label: 'Ultimate Supporter NFT', icon: '👑', unlocked: watchTime >= 7200 } // 2 hours
+    ]
   }
 
   if (loading) {
@@ -443,49 +497,155 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
               </div>
             </Card>
 
+            {/* Watch Progress & NFT Milestones */}
+            {stream.is_active && (
+              <Card className="border-border-primary bg-surface-secondary">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                      ⏱️ Watch Progress
+                    </h3>
+                    <span className="text-sm font-mono text-purple-400">
+                      {formatWatchTime(watchTime)}
+                    </span>
+                  </div>
+
+                  {/* Progress bar with milestones */}
+                  <div className="relative mb-4">
+                    <div className="w-full bg-background-primary rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-1000 ease-out"
+                        style={{ width: `${Math.min((watchTime / 7200) * 100, 100)}%` }}
+                      />
+                    </div>
+
+                    {/* Milestone markers */}
+                    <div className="absolute top-0 w-full h-3 flex justify-between">
+                      {getNFTMilestones().map((milestone, index) => (
+                        <div
+                          key={index}
+                          className={`w-4 h-4 rounded-full border-2 -mt-0.5 relative ${
+                            milestone.unlocked
+                              ? 'bg-green-500 border-green-400'
+                              : 'bg-gray-600 border-gray-500'
+                          }`}
+                          style={{ left: `${(milestone.time / 7200) * 100}%`, transform: 'translateX(-50%)' }}
+                        >
+                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap">
+                            <span className={milestone.unlocked ? 'text-green-400' : 'text-gray-500'}>
+                              {milestone.icon}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* NFT Milestones Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {getNFTMilestones().map((milestone, index) => (
+                      <div
+                        key={index}
+                        className={`p-2 rounded-lg border text-center transition-all ${
+                          milestone.unlocked
+                            ? 'bg-green-600/20 border-green-500/50 text-green-300'
+                            : 'bg-gray-700/20 border-gray-600/50 text-gray-400'
+                        }`}
+                      >
+                        <div className="text-lg mb-1">{milestone.icon}</div>
+                        <div className="text-xs font-medium">{milestone.label}</div>
+                        <div className="text-xs opacity-75">
+                          {Math.floor(milestone.time / 60)}m
+                        </div>
+                        {milestone.unlocked && (
+                          <Button
+                            size="sm"
+                            className="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs h-6"
+                            onClick={() => showToast({ title: `${milestone.label} ready to mint! 🎉`, type: 'success' })}
+                          >
+                            Mint NFT
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Stream Info */}
             <Card className="border-border-primary bg-surface-secondary">
               <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-16 h-16 ring-2 ring-purple-500/20">
-                      {stream.users?.avatar_ipfs ? (
-                        <img
-                          src={`https://gateway.pinata.cloud/ipfs/${stream.users.avatar_ipfs}`}
-                          alt="Streamer"
-                          className="w-full h-full object-cover rounded-full"
-                          onError={(e) => {
-                            console.error('Avatar loading failed for stream:', stream.stream_key, 'IPFS hash:', stream.users?.avatar_ipfs)
-                            e.currentTarget.style.display = 'none'
-                            const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                            if (fallback) fallback.style.display = 'flex'
-                          }}
-                          onLoad={() => {
-                            console.log('Avatar loaded successfully for stream:', stream.stream_key)
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium text-xl rounded-full"
-                        style={{ display: stream.users?.avatar_ipfs ? 'none' : 'flex' }}
-                      >
-                        {(stream.users?.display_name || stream.users?.username || 'U')[0].toUpperCase()}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-6">
+                  <div className="flex items-start gap-6">
+                    {/* Enhanced Avatar */}
+                    <div className="relative">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-1">
+                        <div className="w-full h-full rounded-full bg-surface-secondary overflow-hidden flex items-center justify-center">
+                          {stream.users?.avatar_ipfs ? (
+                            <img
+                              src={`https://gateway.pinata.cloud/ipfs/${stream.users.avatar_ipfs}`}
+                              alt="Streamer Avatar"
+                              className="w-full h-full object-cover rounded-full"
+                              onError={(e) => {
+                                console.error('Avatar loading failed for stream:', stream.stream_key, 'IPFS hash:', stream.users?.avatar_ipfs)
+                                e.currentTarget.style.display = 'none'
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                if (fallback) fallback.style.display = 'flex'
+                              }}
+                              onLoad={() => {
+                                console.log('Avatar loaded successfully for stream:', stream.stream_key)
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-2xl rounded-full"
+                            style={{ display: stream.users?.avatar_ipfs ? 'none' : 'flex' }}
+                          >
+                            {(stream.users?.display_name || stream.users?.username || 'Streamer')[0].toUpperCase()}
+                          </div>
+                        </div>
                       </div>
-                    </Avatar>
+                      {/* Live indicator on avatar */}
+                      {stream.is_active && stream.is_live && (
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-surface-secondary flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-xl font-semibold text-text-primary mb-1">{stream.title}</h2>
-                      <p className="text-text-secondary font-medium">
-                        {stream.users?.display_name || stream.users?.username || 'Unknown Streamer'}
-                      </p>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h2 className="text-2xl font-bold text-text-primary">{stream.title}</h2>
+                        {stream.is_active && stream.is_live && (
+                          <Badge variant="destructive" className="animate-pulse">
+                            🔴 LIVE
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg font-semibold text-purple-400">
+                          {stream.users?.display_name || stream.users?.username || 'Anonymous Streamer'}
+                        </span>
+                        {stream.users?.username && stream.users?.display_name && (
+                          <span className="text-text-tertiary text-sm">@{stream.users.username}</span>
+                        )}
+                      </div>
+
                       {stream.game_name && (
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <Gamepad2 className="w-4 h-4 text-purple-400" />
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs bg-purple-600/20 text-purple-300 border-purple-500/30">
                             {stream.game_name}
                           </Badge>
                         </div>
                       )}
+
+                      {/* Stream description */}
+                      <p className="text-text-secondary text-sm">
+                        {stream.description || "Live streaming on Zapp - Web3's premier streaming platform! 🎮✨"}
+                      </p>
                     </div>
                   </div>
 
@@ -577,6 +737,80 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Live Chat - Twitch Style */}
+            <Card className="border-border-primary bg-surface-secondary">
+              <div className="h-[500px] flex flex-col">
+                {/* Chat Header */}
+                <div className="px-4 py-3 border-b border-border-secondary">
+                  <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                    💬 Live Chat
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {chatMessages.length}
+                    </Badge>
+                  </h3>
+                </div>
+
+                {/* Chat Messages - Twitch Style */}
+                <div className="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
+                  {chatMessages.length > 0 ? (
+                    chatMessages.map((msg) => (
+                      <div key={msg.id} className="flex items-start gap-2 px-2 py-1 hover:bg-background-primary/50 rounded text-sm">
+                        {/* User Avatar */}
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                          {msg.user[0].toUpperCase()}
+                        </div>
+
+                        {/* Message Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="font-semibold text-purple-400 text-sm">
+                              {msg.user}
+                            </span>
+                            <span className="text-xs text-text-tertiary">
+                              {msg.timestamp.toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <div className="text-text-primary text-sm break-words">
+                            {msg.message}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 px-4">
+                      <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center">
+                        💬
+                      </div>
+                      <h4 className="font-medium text-text-primary mb-2">No messages yet</h4>
+                      <p className="text-sm text-text-secondary">Be the first to start the conversation!</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chat Input */}
+                <div className="p-3 border-t border-border-secondary">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                      placeholder="Type a message..."
+                      className="flex-1 px-3 py-2 bg-background-primary border border-border-secondary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                    />
+                    <Button
+                      onClick={sendChatMessage}
+                      disabled={!chatMessage.trim()}
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
             {/* Quick Actions */}
             <Card className="border-border-primary bg-surface-secondary">
               <div className="p-4">
@@ -628,7 +862,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 </h3>
 
                 {tips.length > 0 ? (
-                  <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                  <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
                     {tips.map((tip) => (
                       <div key={tip.id} className="bg-background-primary border border-border-secondary rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
@@ -651,12 +885,12 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 px-4">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-full flex items-center justify-center">
-                      <Gift className="w-8 h-8 text-green-400" />
+                  <div className="text-center py-6 px-4">
+                    <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-full flex items-center justify-center">
+                      <Gift className="w-6 h-6 text-green-400" />
                     </div>
                     <h4 className="font-medium text-text-primary mb-2">No tips yet</h4>
-                    <p className="text-sm text-text-secondary mb-4">Be the first to show your support!</p>
+                    <p className="text-sm text-text-secondary mb-3">Be the first to show your support!</p>
                     <Button
                       size="sm"
                       onClick={() => setShowTipModal(true)}

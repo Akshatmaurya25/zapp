@@ -12,6 +12,7 @@ import { FollowButton } from '@/components/ui/FollowButton'
 import { CommentModal } from './CommentModal'
 import { DonationModal } from './DonationModal'
 import { VideoPlayer } from '@/components/ui/VideoPlayer'
+import { IPFSImage } from '@/components/ui/IPFSImage'
 import { useToastHelpers } from '@/components/ui/Toast'
 import { cn, formatTimeAgo, formatNumber, formatIPFSUrl } from '@/lib/utils'
 import { detectMediaType, getIPFSUrl, getVideoAttributes } from '@/lib/media-utils'
@@ -384,25 +385,21 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
                     {isVideo ? (
                       <VideoPlayer
                         hash={hash}
-                        mediaType={post.media_types?.[index]}
-                        className="w-full h-full"
-                        style={{ aspectRatio: post.media_ipfs!.length === 1 ? 'auto' : '1' }}
+                        className="w-full"
+                        style={{
+                          aspectRatio: post.media_ipfs!.length === 1 ? 'auto' : '1',
+                          maxHeight: post.media_ipfs!.length === 1 ? '70vh' : '300px',
+                          height: post.media_ipfs!.length === 1 ? 'auto' : '100%'
+                        }}
                         isMainVideo={post.media_ipfs!.length === 1}
                       />
                     ) : (
-                      <img
-                        src={getIPFSUrl(hash)}
+                      <IPFSImage
+                        hash={hash}
                         alt={`Media ${index + 1}`}
-                        className="w-full h-full object-cover bg-slate-800 transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full"
                         style={{ aspectRatio: post.media_ipfs!.length === 1 ? 'auto' : '1' }}
                         loading="lazy"
-                        onError={(e) => {
-                          const img = e.target as HTMLImageElement;
-                          const fallbackUrl = getIPFSUrl(hash, 1);
-                          if (img.src !== fallbackUrl) {
-                            img.src = fallbackUrl;
-                          }
-                        }}
                       />
                     )}
 
@@ -418,12 +415,7 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
                     </div>
                   )}
 
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="p-2 bg-white/20 backdrop-blur-sm rounded-full">
-                      <Eye className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
+                  {/* No overlay for videos - let video player handle interaction */}
                 </div>
                 )
               })}

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/Dialog'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
+import { MediaUpload, MediaPreview } from '@/components/ui/MediaUpload'
 import {
   Copy,
   Play,
@@ -27,10 +28,14 @@ import {
   Video,
   Wifi,
   WifiOff,
-  Gamepad2
+  Gamepad2,
+  ImageIcon,
+  X
 } from 'lucide-react'
 import { streamingService, Stream, formatViewerCount, formatStreamDuration } from '@/lib/streaming'
 import { useToast } from '@/components/ui/Toast'
+import { MediaUpload as MediaUploadType } from '@/types'
+import { getGameLogo, getAvailableGames, getGameCategoryColor } from '@/utils/gameLogos'
 
 interface StreamDashboardProps {
   userToken: string // wallet address for identification
@@ -43,6 +48,7 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
   const [creating, setCreating] = useState(false)
   const [title, setTitle] = useState('')
   const [gameName, setGameName] = useState('')
+  const [thumbnailHash, setThumbnailHash] = useState<string>('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const router = useRouter()
   const { showToast } = useToast()
@@ -101,6 +107,7 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
         body: JSON.stringify({
           title: title.trim(),
           game_name: gameName.trim() || undefined,
+          thumbnail_hash: thumbnailHash || undefined,
           userId: userId
         })
       })
@@ -115,6 +122,7 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
       setShowCreateModal(false)
       setTitle('')
       setGameName('')
+      setThumbnailHash('')
       showToast({ title: 'Stream created successfully!', type: 'success' })
     } catch (error) {
       console.error('Failed to create stream:', error)
@@ -161,15 +169,7 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
   }
 
   if (loading) {
-    return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
-        </div>
-      </Card>
-    )
+    return <DashboardLoadingSkeleton />
   }
 
   // Helper functions for stream status
@@ -212,61 +212,94 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 rounded-2xl p-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
-                <Radio className="w-6 h-6 text-white" />
+      {/* Enhanced Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-purple-900/20"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.1),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.1),transparent_50%)]"></div>
+        <div className="relative bg-surface-secondary/50 backdrop-blur-sm border border-border-primary rounded-2xl p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur-lg opacity-50"></div>
+                  <div className="relative p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl shadow-lg">
+                    <Radio className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    Stream Dashboard
+                  </h1>
+                  <p className="text-text-secondary text-lg">Create, manage, and monitor your live streams</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-text-primary">Stream Dashboard</h1>
-                <p className="text-text-secondary">Create, manage, and monitor your live streams</p>
+
+              {/* Enhanced Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-background-primary/50 backdrop-blur-sm border border-border-secondary rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Video className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-text-primary">{streams.length}</p>
+                      <p className="text-sm text-text-secondary">Total Streams</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-background-primary/50 backdrop-blur-sm border border-border-secondary rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <Users className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-text-primary">{streams.reduce((acc, s) => acc + (s.viewer_count || 0), 0)}</p>
+                      <p className="text-sm text-text-secondary">Total Viewers</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-background-primary/50 backdrop-blur-sm border border-border-secondary rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/20 rounded-lg">
+                      <DollarSign className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-text-primary">${streams.reduce((acc, s) => acc + Number(s.total_tips || 0), 0).toFixed(2)}</p>
+                      <p className="text-sm text-text-secondary">Total Earned</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div className="flex items-center gap-2 text-text-tertiary">
-                <Video className="w-4 h-4" />
-                <span>{streams.length} total streams</span>
-              </div>
-              <div className="flex items-center gap-2 text-text-tertiary">
-                <Users className="w-4 h-4" />
-                <span>{streams.reduce((acc, s) => acc + (s.viewer_count || 0), 0)} total viewers</span>
-              </div>
-              <div className="flex items-center gap-2 text-text-tertiary">
-                <DollarSign className="w-4 h-4" />
-                <span>${streams.reduce((acc, s) => acc + Number(s.total_tips || 0), 0).toFixed(2)} earned</span>
-              </div>
+            <div className="flex flex-col gap-4">
+              <Button
+                variant="outline"
+                onClick={() => window.open('https://obsproject.com/', '_blank')}
+                className="border-border-primary text-text-secondary hover:text-text-primary px-6 py-3"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Download OBS
+              </Button>
+
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg px-8 py-4 text-lg"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Create New Stream
+              </Button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              onClick={() => window.open('https://obsproject.com/', '_blank')}
-              className="border-border-primary text-text-secondary hover:text-text-primary"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Download OBS
-            </Button>
-
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Create New Stream
-            </Button>
-
-            <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
               <DialogContent className="bg-background-primary border-border-primary">
                 <DialogHeader>
                   <DialogTitle className="text-text-primary">Create New Stream</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <label htmlFor="title" className="block text-sm font-medium mb-2 text-text-secondary">
                       Stream Title *
@@ -281,25 +314,110 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
                     />
                     <p className="text-xs text-text-tertiary mt-1">Make it catchy to attract more viewers!</p>
                   </div>
+
                   <div>
-                    <label htmlFor="game" className="block text-sm font-medium mb-2 text-text-secondary">
+                    <label htmlFor="game" className="block text-sm font-medium mb-3 text-text-secondary">
                       Game/Category
                     </label>
-                    <Input
-                      id="game"
-                      value={gameName}
-                      onChange={(e) => setGameName(e.target.value)}
-                      placeholder="What are you playing or doing?"
-                      maxLength={50}
-                      className="bg-background-secondary border-border-primary text-text-primary"
-                    />
+                    <div className="space-y-3">
+                      <Input
+                        id="game"
+                        value={gameName}
+                        onChange={(e) => setGameName(e.target.value)}
+                        placeholder="What are you playing or doing?"
+                        maxLength={50}
+                        className="bg-background-secondary border-border-primary text-text-primary"
+                      />
+                      <div className="bg-background-tertiary rounded-lg p-3">
+                        <p className="text-xs font-medium text-text-secondary mb-3">Popular Games:</p>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                          {getAvailableGames().slice(0, 8).map((game) => (
+                            <button
+                              key={game.key}
+                              type="button"
+                              onClick={() => setGameName(game.name)}
+                              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-background-secondary transition-colors group"
+                            >
+                              <img
+                                src={game.logo}
+                                alt={game.name}
+                                className="w-8 h-8 rounded object-cover group-hover:scale-110 transition-transform"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                              <span className="text-xs text-text-tertiary group-hover:text-text-secondary transition-colors">
+                                {game.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+
+                  {/* Thumbnail Upload */}
+                  <div>
+                    <label className="block text-sm font-medium mb-3 text-text-secondary">
+                      Stream Thumbnail (Optional)
+                    </label>
+                    {thumbnailHash ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full aspect-video bg-background-secondary rounded-lg border border-border-primary overflow-hidden">
+                          <MediaPreview
+                            ipfsHash={thumbnailHash}
+                            type="image/jpeg"
+                            alt="Stream thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setThumbnailHash('')}
+                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-text-tertiary">Great! This thumbnail will be shown when you're live</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <MediaUpload
+                          accept="images"
+                          maxFiles={1}
+                          onFilesUploaded={(uploads: MediaUploadType[]) => {
+                            if (uploads.length > 0 && uploads[0].ipfs_hash) {
+                              setThumbnailHash(uploads[0].ipfs_hash)
+                            }
+                          }}
+                          className="w-full"
+                        />
+                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                          <div className="flex items-start gap-2">
+                            <ImageIcon className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm">
+                              <p className="text-blue-200 font-medium">Pro Tip:</p>
+                              <p className="text-blue-300 text-xs mt-1">
+                                Upload a custom thumbnail to make your stream stand out! Recommended size: 1920x1080px
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
                       <div className="text-sm">
-                        <p className="text-blue-200 font-medium">Next Steps After Creating:</p>
-                        <p className="text-blue-300 text-xs mt-1">You'll get RTMP details to configure in OBS, then you can start broadcasting!</p>
+                        <p className="text-green-200 font-semibold mb-2">Next Steps After Creating:</p>
+                        <ul className="text-green-300 text-xs space-y-1">
+                          <li>• Get RTMP URL and Stream Key for OBS</li>
+                          <li>• Configure OBS with your streaming settings</li>
+                          <li>• Start broadcasting and go live!</li>
+                          {thumbnailHash && <li>• Your custom thumbnail will be displayed</li>}
+                        </ul>
                       </div>
                     </div>
                   </div>
@@ -333,75 +451,89 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </div>
 
       {streams.length === 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Empty State */}
-          <Card className="border-border-primary bg-surface-secondary">
-            <CardContent className="p-8 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center">
-                <Radio className="w-10 h-10 text-purple-400" />
+          {/* Enhanced Empty State */}
+          <Card className="border-border-primary bg-surface-secondary overflow-hidden">
+            <CardContent className="p-8 text-center relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5"></div>
+              <div className="relative">
+                <div className="relative w-24 h-24 mx-auto mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 to-blue-600/30 rounded-full blur-xl"></div>
+                  <div className="relative bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center w-full h-full border border-purple-500/30">
+                    <Radio className="w-12 h-12 text-purple-400" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-text-primary">Ready to Start Streaming?</h3>
+                <p className="text-text-secondary mb-8 max-w-sm mx-auto text-lg">
+                  Create your first stream and start sharing your adventures with the community!
+                </p>
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-xl px-8 py-4 text-lg"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Create Your First Stream
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-text-primary">Ready to Start Streaming?</h3>
-              <p className="text-text-secondary mb-6 max-w-sm mx-auto">
-                Create your first stream and start sharing your gaming adventures with the community!
-              </p>
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Create Your First Stream
-              </Button>
             </CardContent>
           </Card>
 
-          {/* Quick Setup Guide */}
-          <Card className="border-border-primary bg-surface-secondary">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-text-primary">
-                <HelpCircle className="w-5 h-5 text-purple-400" />
+          {/* Enhanced Setup Guide */}
+          <Card className="border-border-primary bg-surface-secondary overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"></div>
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-3 text-text-primary text-xl">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <HelpCircle className="w-6 h-6 text-blue-400" />
+                </div>
                 How to Start Streaming
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">1</div>
-                  <div>
-                    <p className="font-medium text-text-primary">Download OBS Studio</p>
-                    <p className="text-sm text-text-secondary">Free streaming software to broadcast your content</p>
+            <CardContent className="space-y-6 relative">
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-lg">1</div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-text-primary text-lg">Download OBS Studio</p>
+                    <p className="text-text-secondary">Free streaming software to broadcast your content</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">2</div>
-                  <div>
-                    <p className="font-medium text-text-primary">Create a Stream</p>
-                    <p className="text-sm text-text-secondary">Set up your stream title and category</p>
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-lg">2</div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-text-primary text-lg">Create a Stream</p>
+                    <p className="text-text-secondary">Set up your stream title and category</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">3</div>
-                  <div>
-                    <p className="font-medium text-text-primary">Configure OBS</p>
-                    <p className="text-sm text-text-secondary">Use the RTMP URL and Stream Key we provide</p>
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-lg">3</div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-text-primary text-lg">Configure OBS</p>
+                    <p className="text-text-secondary">Use the RTMP URL and Stream Key we provide</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">4</div>
-                  <div>
-                    <p className="font-medium text-text-primary">Start Broadcasting</p>
-                    <p className="text-sm text-text-secondary">Hit "Start Streaming" in OBS and go live!</p>
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-lg">4</div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-text-primary text-lg">Start Broadcasting</p>
+                    <p className="text-text-secondary">Hit "Start Streaming" in OBS and go live!</p>
                   </div>
                 </div>
               </div>
               <Button
                 variant="outline"
                 onClick={() => window.open('https://obsproject.com/download', '_blank')}
-                className="w-full border-border-primary text-text-secondary hover:text-text-primary"
+                className="w-full border-border-primary text-text-secondary hover:text-text-primary py-3"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Download OBS Studio
@@ -410,141 +542,173 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
           </Card>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {streams.map((stream) => {
             const status = getStreamStatus(stream)
             return (
-              <Card key={stream.id} className="border-border-primary bg-surface-secondary overflow-hidden">
+              <Card key={stream.id} className="border-border-primary bg-surface-secondary overflow-hidden hover:shadow-2xl transition-all duration-300 group">
                 <CardContent className="p-0">
-                  {/* Stream Header */}
-                  <div className="p-6 pb-4">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-xl font-semibold text-text-primary">{stream.title}</h3>
-                          {getStatusBadge(status)}
-                        </div>
-
-                        <p className="text-text-secondary text-sm">{getStatusDescription(status)}</p>
-
-                        {stream.game_name && (
-                          <div className="flex items-center gap-2">
-                            <Gamepad2 className="w-4 h-4 text-purple-400" />
-                            <span className="text-text-secondary">Playing: {stream.game_name}</span>
+                  {/* Enhanced Stream Header */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-blue-500/5"></div>
+                    <div className="relative p-8">
+                      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-center gap-4 flex-wrap">
+                            <h3 className="text-2xl font-bold text-text-primary group-hover:text-purple-400 transition-colors">{stream.title}</h3>
+                            {getStatusBadge(status)}
                           </div>
-                        )}
 
-                        {/* Stream Stats */}
-                        <div className="flex items-center gap-6 text-sm">
-                          <div className="flex items-center gap-2 text-text-tertiary">
-                            <Eye className="w-4 h-4" />
-                            <span>{formatViewerCount(stream.viewer_count)} viewers</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-text-tertiary">
-                            <DollarSign className="w-4 h-4" />
-                            <span>${Number(stream.total_tips || 0).toFixed(2)} earned</span>
-                          </div>
-                          {stream.started_at && (
-                            <div className="flex items-center gap-2 text-text-tertiary">
-                              <Clock className="w-4 h-4" />
-                              <span>
-                                {status === 'live' ? `${formatStreamDuration(stream.started_at)} live` :
-                                 status === 'ready' ? 'Ready to go live' :
-                                 'Stream created'}
-                              </span>
+                          <p className="text-text-secondary text-lg">{getStatusDescription(status)}</p>
+
+                          {stream.game_name && (
+                            <div className="flex items-center gap-3 bg-background-primary/50 rounded-lg px-4 py-2 w-fit">
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={getGameLogo(stream.game_name)}
+                                  alt={stream.game_name}
+                                  className="w-6 h-6 rounded object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                                    if (fallback) fallback.style.display = 'flex'
+                                  }}
+                                />
+                                <Gamepad2 className="w-5 h-5 text-purple-400" style={{ display: 'none' }} />
+                              </div>
+                              <span className="text-text-secondary font-medium">Playing: {stream.game_name}</span>
                             </div>
                           )}
-                        </div>
-                      </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {stream.is_active && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewStream(stream.stream_key)}
-                            className="border-border-primary text-text-secondary hover:text-text-primary"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Watch Stream
-                          </Button>
-                        )}
-                        {stream.is_active && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => endStream(stream.stream_key)}
-                            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                          >
-                            <Square className="w-4 h-4 mr-2" />
-                            End Stream
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RTMP Configuration Panel */}
-                  {stream.is_active && (
-                    <div className="border-t border-border-secondary bg-background-tertiary">
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-semibold text-text-primary flex items-center gap-2">
-                            <Settings className="w-4 h-4 text-purple-400" />
-                            OBS Configuration
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            {status === 'ready' ? (
-                              <div className="flex items-center gap-2 text-blue-400">
-                                <Wifi className="w-4 h-4" />
-                                <span className="text-sm">Waiting for connection</span>
+                          {/* Enhanced Stream Stats */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center gap-3 bg-background-primary/30 rounded-lg p-3">
+                              <div className="p-2 bg-blue-500/20 rounded-lg">
+                                <Eye className="w-4 h-4 text-blue-400" />
                               </div>
-                            ) : status === 'broadcasting' ? (
-                              <div className="flex items-center gap-2 text-green-400">
-                                <Radio className="w-4 h-4" />
-                                <span className="text-sm">Connected</span>
+                              <div>
+                                <p className="text-lg font-semibold text-text-primary">{formatViewerCount(stream.viewer_count)}</p>
+                                <p className="text-xs text-text-tertiary">Viewers</p>
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-2 text-red-400">
-                                <WifiOff className="w-4 h-4" />
-                                <span className="text-sm">Offline</span>
+                            </div>
+                            <div className="flex items-center gap-3 bg-background-primary/30 rounded-lg p-3">
+                              <div className="p-2 bg-green-500/20 rounded-lg">
+                                <DollarSign className="w-4 h-4 text-green-400" />
+                              </div>
+                              <div>
+                                <p className="text-lg font-semibold text-text-primary">${Number(stream.total_tips || 0).toFixed(2)}</p>
+                                <p className="text-xs text-text-tertiary">Earned</p>
+                              </div>
+                            </div>
+                            {stream.started_at && (
+                              <div className="flex items-center gap-3 bg-background-primary/30 rounded-lg p-3">
+                                <div className="p-2 bg-purple-500/20 rounded-lg">
+                                  <Clock className="w-4 h-4 text-purple-400" />
+                                </div>
+                                <div>
+                                  <p className="text-lg font-semibold text-text-primary">
+                                    {status === 'live' ? formatStreamDuration(stream.started_at) :
+                                     status === 'ready' ? 'Ready' :
+                                     'Created'}
+                                  </p>
+                                  <p className="text-xs text-text-tertiary">
+                                    {status === 'live' ? 'Duration' : 'Status'}
+                                  </p>
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                          <div className="space-y-2">
+                        {/* Enhanced Action Buttons */}
+                        <div className="flex flex-col gap-3 flex-shrink-0">
+                          {stream.is_active && (
+                            <Button
+                              variant="outline"
+                              onClick={() => viewStream(stream.stream_key)}
+                              className="border-border-primary text-text-secondary hover:text-text-primary hover:border-purple-500/50 px-6 py-3"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Watch Stream
+                            </Button>
+                          )}
+                          {stream.is_active && (
+                            <Button
+                              variant="outline"
+                              onClick={() => endStream(stream.stream_key)}
+                              className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 px-6 py-3"
+                            >
+                              <Square className="w-4 h-4 mr-2" />
+                              End Stream
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Enhanced RTMP Configuration Panel */}
+                  {stream.is_active && (
+                    <div className="border-t border-border-secondary bg-gradient-to-br from-background-tertiary to-background-secondary">
+                      <div className="p-8">
+                        <div className="flex items-center justify-between mb-6">
+                          <h4 className="text-xl font-bold text-text-primary flex items-center gap-3">
+                            <div className="p-2 bg-purple-500/20 rounded-lg">
+                              <Settings className="w-5 h-5 text-purple-400" />
+                            </div>
+                            OBS Configuration
+                          </h4>
+                          <div className="flex items-center gap-3">
+                            {status === 'ready' ? (
+                              <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/30">
+                                <Wifi className="w-4 h-4 text-blue-400" />
+                                <span className="text-sm font-medium text-blue-400">Waiting for connection</span>
+                              </div>
+                            ) : status === 'broadcasting' ? (
+                              <div className="flex items-center gap-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/30">
+                                <Radio className="w-4 h-4 text-green-400" />
+                                <span className="text-sm font-medium text-green-400">Connected</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/30">
+                                <WifiOff className="w-4 h-4 text-red-400" />
+                                <span className="text-sm font-medium text-red-400">Offline</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-xs font-medium text-text-secondary">RTMP Server URL</label>
+                              <label className="text-sm font-semibold text-text-secondary">RTMP Server URL</label>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => copyToClipboard(stream.rtmp_url || '', 'RTMP URL')}
-                                className="h-6 px-2 text-xs"
+                                className="h-8 px-3 text-sm hover:bg-purple-500/10"
                               >
-                                <Copy className="w-3 h-3 mr-1" />
+                                <Copy className="w-4 h-4 mr-2" />
                                 Copy
                               </Button>
                             </div>
                             <Input
                               value={stream.rtmp_url || ''}
                               readOnly
-                              className="text-xs font-mono bg-background-primary border-border-primary text-text-primary"
+                              className="text-sm font-mono bg-background-primary border-border-primary text-text-primary py-3"
                             />
                           </div>
 
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <label className="text-xs font-medium text-text-secondary">Stream Key</label>
+                              <label className="text-sm font-semibold text-text-secondary">Stream Key</label>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => copyToClipboard(stream.stream_key, 'Stream Key')}
-                                className="h-6 px-2 text-xs"
+                                className="h-8 px-3 text-sm hover:bg-purple-500/10"
                               >
-                                <Copy className="w-3 h-3 mr-1" />
+                                <Copy className="w-4 h-4 mr-2" />
                                 Copy
                               </Button>
                             </div>
@@ -552,23 +716,37 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
                               value={stream.stream_key}
                               readOnly
                               type="password"
-                              className="text-xs font-mono bg-background-primary border-border-primary text-text-primary"
+                              className="text-sm font-mono bg-background-primary border-border-primary text-text-primary py-3"
                             />
                           </div>
                         </div>
 
-                        {/* Quick Setup Instructions */}
-                        <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                          <div className="flex items-start gap-2">
-                            <Monitor className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm">
-                              <p className="text-purple-200 font-medium mb-1">Quick OBS Setup:</p>
-                              <p className="text-purple-300 text-xs">
-                                1. Go to OBS Settings → Stream<br/>
-                                2. Set Service to "Custom..."<br/>
-                                3. Paste the Server URL and Stream Key above<br/>
-                                4. Click "Start Streaming" in OBS
-                              </p>
+                        {/* Enhanced Setup Instructions */}
+                        <div className="mt-6 p-6 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                          <div className="flex items-start gap-4">
+                            <div className="p-2 bg-purple-500/20 rounded-lg">
+                              <Monitor className="w-6 h-6 text-purple-400" />
+                            </div>
+                            <div>
+                              <p className="text-purple-200 font-semibold text-lg mb-3">Quick OBS Setup:</p>
+                              <div className="space-y-2 text-purple-300">
+                                <p className="flex items-center gap-2">
+                                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                                  Go to OBS Settings → Stream
+                                </p>
+                                <p className="flex items-center gap-2">
+                                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                  Set Service to "Custom..."
+                                </p>
+                                <p className="flex items-center gap-2">
+                                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                  Paste the Server URL and Stream Key above
+                                </p>
+                                <p className="flex items-center gap-2">
+                                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                                  Click "Start Streaming" in OBS
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -581,6 +759,81 @@ export default function StreamDashboard({ userToken, userId }: StreamDashboardPr
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function DashboardLoadingSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Header Skeleton */}
+      <div className="relative overflow-hidden">
+        <div className="bg-surface-secondary/50 border border-border-primary rounded-2xl p-8">
+          <div className="animate-pulse">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-surface-tertiary rounded-2xl"></div>
+                  <div className="space-y-2">
+                    <div className="h-8 bg-surface-tertiary rounded w-64"></div>
+                    <div className="h-5 bg-surface-tertiary rounded w-80"></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-background-primary/50 border border-border-secondary rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-surface-tertiary rounded-lg"></div>
+                        <div className="space-y-2">
+                          <div className="h-6 bg-surface-tertiary rounded w-12"></div>
+                          <div className="h-3 bg-surface-tertiary rounded w-20"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="h-12 bg-surface-tertiary rounded-lg w-32"></div>
+                <div className="h-14 bg-surface-tertiary rounded-lg w-40"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {[...Array(2)].map((_, i) => (
+          <Card key={i} className="border-border-primary bg-surface-secondary">
+            <CardContent className="p-8">
+              <div className="animate-pulse space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-surface-tertiary rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-surface-tertiary rounded w-48"></div>
+                    <div className="h-4 bg-surface-tertiary rounded w-64"></div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[...Array(4)].map((_, j) => (
+                    <div key={j} className="flex items-start gap-4">
+                      <div className="w-8 h-8 bg-surface-tertiary rounded-full"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-surface-tertiary rounded w-32"></div>
+                        <div className="h-3 bg-surface-tertiary rounded w-48"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-12 bg-surface-tertiary rounded w-full"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }

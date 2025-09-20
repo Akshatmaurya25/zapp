@@ -31,6 +31,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Process media types - default to image and detect videos
+    let processedMediaTypes = null
+    if (body.media_ipfs && body.media_ipfs.length > 0) {
+      processedMediaTypes = body.media_ipfs.map((hash: string, index: number) => {
+        // Check if media type was explicitly provided
+        if (body.media_types && body.media_types[index]) {
+          return body.media_types[index]
+        }
+
+        // Check if the hash or filename suggests a video format
+        const hashLower = hash.toLowerCase()
+        const videoPatterns = [
+          '.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v',
+          '.flv', '.wmv', '.3gp', '.ogv', 'mp4', 'webm', 'mov', '.ogg'
+        ]
+
+        const isVideo = videoPatterns.some(pattern => hashLower.includes(pattern))
+        return isVideo ? 'video/mp4' : 'image/jpeg'
+      })
+    }
+
     // Create new post
     const { data, error } = await supabase
       .from('posts')
@@ -39,7 +60,7 @@ export async function POST(request: NextRequest) {
           user_id: body.user_id,
           content: body.content,
           media_ipfs: body.media_ipfs || null,
-          media_types: body.media_types || null,
+          media_types: processedMediaTypes,
           game_category: body.game_category || 'general',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

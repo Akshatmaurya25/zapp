@@ -6,6 +6,7 @@ export interface Stream {
   stream_key: string
   title: string
   game_name?: string
+  thumbnail_hash?: string
   is_active: boolean
   viewer_count: number
   total_tips: string | number
@@ -38,6 +39,7 @@ export interface StreamTip {
 export interface CreateStreamData {
   title?: string
   game_name?: string
+  thumbnail_hash?: string
 }
 
 export class StreamingService {

@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, game_name, userId } = await request.json()
+    const { title, game_name, thumbnail_hash, userId } = await request.json()
 
     if (!userId) {
       return NextResponse.json(
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
           stream_key: streamKey,
           title: title || 'Gaming Stream',
           game_name: game_name || null,
+          thumbnail_hash: thumbnail_hash || null,
           is_active: true, // Set to true so streamers can immediately use RTMP details
           viewer_count: 0,
           total_tips: 0,

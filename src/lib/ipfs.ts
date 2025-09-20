@@ -247,24 +247,57 @@ export class IPFSUploadService {
     })
     formData.append('pinataOptions', options)
 
-    const response = await fetch(`${this.pinataEndpoint}/pinning/pinFileToIPFS`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.pinataJWT}`,
-      },
-      body: formData,
-    })
+    // Calculate timeout based on file size - more time for larger files
+    const baseTimeout = 30000 // 30 seconds base
+    const sizeMultiplier = Math.max(1, file.size / (10 * 1024 * 1024)) // Extra time per 10MB
+    const calculatedTimeout = Math.min(baseTimeout * sizeMultiplier, 300000) // Max 5 minutes
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Failed to upload to IPFS: ${error}`)
+    console.log(`📤 Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) with ${(calculatedTimeout / 1000).toFixed(0)}s timeout`)
+
+    // Create AbortController for timeout
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => {
+      abortController.abort()
+    }, calculatedTimeout)
+
+    try {
+      const response = await fetch(`${this.pinataEndpoint}/pinning/pinFileToIPFS`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.pinataJWT}`,
+        },
+        body: formData,
+        signal: abortController.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(`Failed to upload to IPFS: ${error}`)
+      }
+
+      const result = await response.json()
+      const hash = result.IpfsHash
+      const url = `https://gateway.pinata.cloud/ipfs/${hash}`
+
+      console.log(`✅ Upload successful: ${hash}`)
+      return { hash, url }
+    } catch (error) {
+      clearTimeout(timeoutId)
+
+      // Handle specific timeout errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Upload timeout after ${(calculatedTimeout / 1000).toFixed(0)} seconds. Please try uploading a smaller file or check your internet connection.`)
+      }
+
+      // Handle network errors more gracefully
+      if (error instanceof Error && error.message.includes('fetch failed')) {
+        throw new Error('Network error during upload. Please check your internet connection and try again.')
+      }
+
+      throw error
     }
-
-    const result = await response.json()
-    const hash = result.IpfsHash
-    const url = `https://gateway.pinata.cloud/ipfs/${hash}`
-
-    return { hash, url }
   }
 
   async uploadJSON(data: object): Promise<{ hash: string; url: string }> {

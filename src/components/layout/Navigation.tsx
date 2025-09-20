@@ -59,6 +59,15 @@ export function Navigation() {
     { href: '/achievements', icon: Trophy, label: 'Achievements', active: pathname === '/achievements' },
   ]
 
+  // Mobile-specific nav items - replace Feed with Streaming
+  const mobileNavItems = [
+    { href: '/dashboard', icon: Home, label: 'Home', active: pathname === '/dashboard' },
+    { href: '/streams', icon: Play, label: 'Streaming', active: pathname.startsWith('/stream') },
+    { href: '/community', icon: Users, label: 'Community', active: pathname === '/community' },
+    { href: '/discover', icon: Search, label: 'Discover', active: pathname === '/discover' },
+    { href: '/achievements', icon: Trophy, label: 'Achievements', active: pathname === '/achievements' },
+  ]
+
   return (
     <>
       {/* Desktop Navigation */}
@@ -200,11 +209,11 @@ export function Navigation() {
         {isMobileMenuOpen && (
           <div className="absolute top-16 left-0 right-0 bg-background-primary border-b border-border-primary shadow-lg">
             <div className="p-4 space-y-3">
-              {navItems.map((item) => {
+              {mobileNavItems.map((item) => {
                 const Icon = item.icon
                 return (
-                  <Link 
-                    key={item.href} 
+                  <Link
+                    key={item.href}
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -235,26 +244,35 @@ export function Navigation() {
               {user && (
                 <div className="border-t border-border-secondary pt-3 space-y-3">
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-background-tertiary transition-colors">
-                      <Avatar
-                        src={formatIPFSUrl(user.avatar_ipfs)}
-                        alt={user.display_name || user.username || 'User'}
-                        fallbackText={user.display_name || user.username || 'U'}
-                        identifier={user.id || user.username || user.wallet_address}
-                        size="lg"
-                        className="h-10 w-10"
-                      />
-                      <div>
-                        <div className="text-text-primary font-medium">{user.display_name}</div>
-                        <div className="text-text-tertiary text-sm">@{user.username}</div>
+                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-background-tertiary transition-colors border border-border-secondary">
+                      <div className="relative">
+                        <Avatar
+                          src={formatIPFSUrl(user.avatar_ipfs)}
+                          alt={user.display_name || user.username || 'User'}
+                          fallbackText={user.display_name || user.username || 'U'}
+                          identifier={user.id || user.username || user.wallet_address}
+                          size="lg"
+                          className="h-12 w-12 ring-2 ring-purple-500/30"
+                        />
+                        {/* Online indicator */}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-background-primary rounded-full"></div>
                       </div>
+                      <div className="flex-1">
+                        <div className="text-text-primary font-semibold text-lg">{user.display_name || user.username}</div>
+                        <div className="text-text-tertiary text-sm">@{user.username}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Wallet className="h-3 w-3 text-text-tertiary" />
+                          <span className="text-text-tertiary text-xs">{formatAddress(address || '', 4)}</span>
+                        </div>
+                      </div>
+                      <User className="h-5 w-5 text-text-tertiary" />
                     </div>
                   </Link>
-                  
+
                   <Button
                     variant="outline"
                     onClick={disconnectWallet}
-                    className="w-full text-text-secondary border-border-primary"
+                    className="w-full text-text-secondary border-border-primary hover:bg-red-500/10 hover:border-red-500/50 hover:text-red-400"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Disconnect Wallet
@@ -292,7 +310,7 @@ export function MobileBottomNav() {
 
   const bottomNavItems = [
     { href: '/dashboard', icon: Home, label: 'Home', isLink: true },
-    { href: '/feed', icon: TrendingUp, label: 'Feed', isLink: true },
+    { href: '/streams', icon: Play, label: 'Stream', isLink: true },
     { href: '/post/create', icon: Plus, label: 'Post', isLink: false },
     { href: '/achievements', icon: Trophy, label: 'Awards', isLink: true },
     { href: '/profile', icon: User, label: 'Profile', isLink: true },

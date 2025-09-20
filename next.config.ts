@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
+    {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
@@ -19,7 +19,44 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'gateway.pinata.cloud',
         port: '',
-        pathname: '/ipfs/**',
+        pathname: '/**',
+      },
+      // NFT image sources
+      {
+        protocol: 'https',
+        hostname: 'pbs.twimg.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.freepik.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pinimg.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.expresschroma.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'encrypted-tbn0.gstatic.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'miro.medium.com',
+        port: '',
+        pathname: '/**',
       },
     ],
   },

@@ -31,14 +31,15 @@ export function detectMediaType(
   const hashLower = hash.toLowerCase()
   const videoPatterns = [
     'video', '.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v',
-    '.flv', '.wmv', '.3gp', '.ogv', 'mp4', 'webm', 'mov'
+    '.flv', '.wmv', '.3gp', '.ogv', 'mp4', 'webm', 'mov', '.ogg'
   ]
 
   const imagePatterns = [
     'image', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',
-    '.bmp', '.tiff', 'jpg', 'jpeg', 'png', 'gif', 'webp'
+    '.bmp', '.tiff', 'jpg', 'jpeg', 'png', 'gif', 'webp', '.avif'
   ]
 
+  // Check for video patterns first (more specific)
   if (videoPatterns.some(pattern => hashLower.includes(pattern))) {
     return 'video'
   }
@@ -47,7 +48,8 @@ export function detectMediaType(
     return 'image'
   }
 
-  return 'unknown'
+  // Default to image for unknown types (safer fallback)
+  return 'image'
 }
 
 /**
@@ -113,10 +115,10 @@ export function getVideoPosterUrl(videoHash: string): string {
  */
 export function getVideoAttributes(isMainVideo: boolean = false) {
   return {
-    controls: true,
-    preload: isMainVideo ? 'metadata' : 'none',
+    controls: false, // Disable native controls to prevent conflicts with custom controls
+    preload: 'metadata', // Always preload metadata for better UX
     playsInline: true,
-    muted: true,
+    muted: false, // Allow sound by default, let user control muting
     controlsList: 'nodownload',
     ...(isMainVideo ? {} : { loading: 'lazy' as const })
   }

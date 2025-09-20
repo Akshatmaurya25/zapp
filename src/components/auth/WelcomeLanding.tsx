@@ -12,23 +12,22 @@ import {
   Trophy,
   Coins,
   Gamepad2,
-  MessageSquare,
-  TrendingUp,
-  Star,
   Shield,
   Sparkles,
   ArrowRight,
   Play,
+  Activity,
+  ChevronDown,
+  Plus,
+  Minus,
+  Star,
+  CheckCircle,
   Globe,
   Lock,
   Rocket,
-  ChevronDown,
-  Activity,
-  Layers,
-  BarChart3,
-  Brain,
-  Wallet,
-  Gift,
+  Eye,
+  Heart,
+  MessageCircle,
 } from "lucide-react";
 
 interface WelcomeLandingProps {
@@ -37,792 +36,479 @@ interface WelcomeLandingProps {
 
 export function WelcomeLanding({ onConnect }: WelcomeLandingProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [currentFeature, setCurrentFeature] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [floatingElements, setFloatingElements] = useState<Array<{x: number, y: number, delay: number}>>([]);
 
   useEffect(() => {
     setIsVisible(true);
-    const featureInterval = setInterval(() => {
-      setCurrentFeature((prev) => (prev + 1) % 3);
-    }, 4000);
+
+    // Generate floating elements
+    const elements = Array.from({ length: 12 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      delay: Math.random() * 3,
+    }));
+    setFloatingElements(elements);
 
     const testimonialInterval = setInterval(() => {
       setCurrentTestimonial((prev) => (prev + 1) % 3);
     }, 5000);
 
     return () => {
-      clearInterval(featureInterval);
       clearInterval(testimonialInterval);
     };
   }, []);
 
   const features = [
     {
-      text: "Share Epic Gaming Moments",
+      title: "Gaming Social Hub",
       icon: Gamepad2,
-      color: "from-blue-500 to-cyan-500",
-      desc: "Capture and share your best gameplay moments",
+      color: "from-blue-600 to-cyan-500",
+      gradient: "bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
+      description: "Connect with millions of gamers, share epic moments, and build your gaming legacy",
+      stats: "2M+ Gamers",
     },
     {
-      text: "Earn SOMI Rewards",
+      title: "Earn SOMI Tokens",
       icon: Coins,
       color: "from-yellow-500 to-orange-500",
-      desc: "Get rewarded for quality content and engagement",
+      gradient: "bg-gradient-to-br from-yellow-500/20 to-orange-500/20",
+      description: "Get rewarded for creating content, engaging with community, and achieving milestones",
+      stats: "$1M+ Earned",
     },
     {
-      text: "Collect NFT Achievements",
+      title: "NFT Achievements",
       icon: Trophy,
-      color: "from-purple-500 to-pink-500",
-      desc: "Unlock exclusive NFTs for your gaming milestones",
+      color: "from-purple-600 to-pink-500",
+      gradient: "bg-gradient-to-br from-purple-500/20 to-pink-500/20",
+      description: "Collect unique NFT badges for your gaming achievements and showcase your skills",
+      stats: "50K+ NFTs",
+    },
+    {
+      title: "Secure & Fast",
+      icon: Shield,
+      color: "from-emerald-600 to-green-500",
+      gradient: "bg-gradient-to-br from-emerald-500/20 to-green-500/20",
+      description: "Built on Somnia's lightning-fast blockchain with enterprise-grade security",
+      stats: "1M+ TPS",
     },
   ];
 
   const testimonials = [
     {
-      text: "Zapp revolutionized how I share my gaming content!",
-      author: "ProGamer_2024",
-      game: "Valorant Champion",
+      text: "Zapp revolutionized my gaming experience. Earning SOMI while playing is incredible!",
+      author: "CryptoApe",
+      role: "NFT Collector • 2.5K SOMI Earned",
+      avatar: "https://img.freepik.com/free-vector/hand-drawn-nft-style-ape-illustration_23-2149622021.jpg?semt=ais_incoming&w=740&q=80",
+      rating: 5,
     },
     {
-      text: "Earning SOMI tokens while building my community is amazing!",
-      author: "StreamMaster",
-      game: "Twitch Streamer",
+      text: "Best gaming platform ever! My NFT collection grew from 0 to 50+ in just 3 months.",
+      author: "CoolCat_Gamer",
+      role: "Pro Streamer • Top 100 Player",
+      avatar: "https://www.expresschroma.com/wp-content/uploads/2021/11/cool-cats.webp",
+      rating: 5,
     },
     {
-      text: "My NFT achievement collection is growing every day!",
-      author: "CryptoGamer",
-      game: "Web3 Enthusiast",
+      text: "The community is amazing and rewards are instant. Made $500+ just by being active!",
+      author: "PixelMaster",
+      role: "Content Creator • 50K Followers",
+      avatar: "https://i.pinimg.com/736x/9b/bf/7b/9bbf7b7765d1c7f0d01c59bb4264aaf2.jpg",
+      rating: 5,
     },
   ];
 
+  const faqs = [
+    {
+      question: "What makes Zapp different from other gaming platforms?",
+      answer: "Zapp is the first Web3 gaming social platform that actually rewards you for your gaming achievements. Built on Somnia's ultra-fast blockchain, you earn real crypto (SOMI) for content creation, community engagement, and collecting NFT achievement badges.",
+    },
+    {
+      question: "How do I start earning SOMI tokens?",
+      answer: "Simply connect your wallet, complete your profile, and start sharing your gaming moments! You earn SOMI through posting content, getting likes/comments, completing achievement challenges, and participating in community events. The more active you are, the more you earn.",
+    },
+    {
+      question: "Are there any fees I need to worry about?",
+      answer: "Most features are completely free! Thanks to Somnia's advanced technology, basic actions like posting, commenting, and earning rewards have zero gas fees. Only premium features like NFT minting have minimal fees (<$0.01).",
+    },
+    {
+      question: "What are NFT achievement badges?",
+      answer: "These are unique digital collectibles you earn for reaching gaming milestones - like getting your first win streak, reaching a new rank, or completing special challenges. Each NFT is verifiably yours and can be traded or showcased in your profile.",
+    },
+    {
+      question: "Is my gaming data and content secure?",
+      answer: "Absolutely! Your content is stored on IPFS (decentralized storage) and secured by blockchain technology. You have true ownership of your data, and it can never be deleted or censored by any central authority.",
+    },
+    {
+      question: "How do I get started today?",
+      answer: "Just click 'Connect Wallet' above! We support all major wallets like MetaMask, Coinbase Wallet, and WalletConnect. Once connected, you can immediately start exploring, posting, and earning. No waiting periods or complex setup required.",
+    },
+  ];
+
+  const stats = [
+    { label: "Active Gamers", value: "2.1M+", icon: Users },
+    { label: "SOMI Distributed", value: "$5.2M", icon: Coins },
+    { label: "NFTs Minted", value: "89K+", icon: Trophy },
+    { label: "Gaming Sessions", value: "12M+", icon: Play },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Enhanced Animated Background */}
-      <div className="absolute inset-0">
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
-
-        {/* Multiple Floating Orbs with different animations */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse delay-2000" />
-        <div className="absolute top-10 right-1/3 w-64 h-64 bg-gradient-to-r from-green-500/15 to-emerald-500/15 rounded-full blur-3xl animate-pulse delay-3000" />
-        <div className="absolute bottom-32 left-1/3 w-56 h-56 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-full blur-3xl animate-pulse delay-4000" />
-
-        {/* Animated particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 bg-blue-400/30 rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 3}s`,
-              }}
-            />
-          ))}
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Simplified Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,93,250,0.05),transparent_70%)]" />
       </div>
 
       <div className="relative z-10">
-        {/* Navigation Header */}
-        <nav className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <Logo size="lg" href="#" className="text-white" />
-            <div className="hidden md:flex items-center gap-6 text-sm">
-              <a
-                href="#features"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Features
-              </a>
-              <a
-                href="#about"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                About
-              </a>
-              <a
-                href="#community"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Community
-              </a>
-              <Button variant="gradientOutline" size="sm">
-                Launch App
-              </Button>
+        {/* Navigation */}
+        <nav className="backdrop-blur-xl  sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Logo size="lg" href="#" className="text-white" />
+              
+              </div>
+              <div className="hidden md:flex items-center gap-6 text-sm">
+                <a href="#features" className="text-gray-300 hover:text-white transition-all duration-300 hover:scale-105">Features</a>
+                <a href="#community" className="text-gray-300 hover:text-white transition-all duration-300 hover:scale-105">Community</a>
+                <a href="#faq" className="text-gray-300 hover:text-white transition-all duration-300 hover:scale-105">FAQ</a>
+                <Button variant="gaming" size="sm" className="animate-pulse">
+                  Launch App
+                </Button>
+              </div>
             </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <section className="container mx-auto px-4 pt-8 pb-12">
+        {/* Hero Section - Simplified */}
+        <section className="min-h-screen flex items-center justify-center relative px-4 py-20">
           <div
             className={cn(
-              "text-center space-y-6 max-w-5xl mx-auto transition-all duration-1000",
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-10"
+              "text-center space-y-12 max-w-4xl mx-auto transition-all duration-700",
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
             )}
           >
-            {/* Main Hero Content */}
-            <div className="space-y-5">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full border border-blue-500/30 backdrop-blur-sm">
-                <Sparkles className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-medium text-blue-300">
-                  The Future of Gaming Social
-                </span>
+            {/* Status Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full border border-green-500/20">
+              <div className="w-2 h-2 bg-green-400 rounded-full" />
+              <span className="text-sm text-green-300">Join 2M+ Active Streamers</span>
+            </div>
+
+            {/* Main Title */}
+            <div className="space-y-6">
+              <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+                <span className="text-white">Stream.</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Earn.</span>
+                <br />
+                <span className="text-white">Own.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                The Web3 platform where your streaming achievements actually pay you.
+                <br />
+                <span className="text-purple-400 font-medium">Earn SOMI tokens and collect NFTs.</span>
+              </p>
+            </div>
+
+            {/* CTA Section */}
+            <div className="space-y-8">
+              <div className="max-w-lg mx-auto">
+                <WalletSelector onConnect={onConnect} />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button variant="gaming" size="lg" className="min-w-[200px]">
+                  <Play className="h-5 w-5 mr-2" />
+                  Start Streaming
+                </Button>
+                <Button variant="outline" size="lg" className="min-w-[200px] text-gray-300 border-gray-600">
+                  <Eye className="h-5 w-5 mr-2" />
+                  Watch Demo
+                </Button>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  <span>Free to join</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-blue-400" />
+                  <span>Instant rewards</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-purple-400" />
+                  <span>Secure blockchain</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="py-16 bg-gradient-to-r from-blue-950/30 to-purple-950/30 backdrop-blur-sm border-y border-white/5">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <div key={index} className="text-center group hover:scale-110 transition-all duration-300">
+                    <div className="mb-3">
+                      <Icon className="h-8 w-8 text-blue-400 mx-auto group-hover:text-purple-400 transition-colors" />
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
+                    <div className="text-sm text-gray-400">{stat.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-20 bg-gradient-to-b from-transparent to-slate-950/50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-500/30 backdrop-blur-sm mb-6">
                 <Sparkles className="h-4 w-4 text-purple-400" />
+                <span className="text-sm font-medium text-purple-300">Why Choose Zapp</span>
               </div>
+              <h2 className="text-5xl font-bold text-white mb-6">
+                Gaming Meets
+                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"> Web3</span>
+              </h2>
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                We've built the missing bridge between your gaming skills and real-world value.
+              </p>
+            </div>
 
-              {/* Main Title */}
-              <div className="space-y-4">
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black">
-                  <span className="bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent tracking-tight">
-                    Share, Earn,
-                  </span>
-                  <br />
-                  <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight">
-                    Achieve
-                  </span>
-                </h1>
-                <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                  Join the ultimate Web3 gaming social platform. Connect with
-                  millions of gamers, earn crypto rewards, and collect NFT
-                  achievements—all on Somnia's lightning-fast blockchain.
-                </p>
-              </div>
-
-              {/* Dynamic Feature Showcase */}
-              <div className="py-6">
-                <div className="relative h-20 flex items-center justify-center">
-                  {features.map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div
-                        key={index}
-                        className={cn(
-                          "absolute flex flex-col items-center gap-3 transition-all duration-700",
-                          currentFeature === index
-                            ? "opacity-100 translate-y-0 scale-100"
-                            : "opacity-0 translate-y-4 scale-95"
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "p-4 rounded-2xl bg-gradient-to-r shadow-xl",
-                            feature.color
-                          )}
-                        >
-                          <Icon className="h-8 w-8 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <Card key={index} className="group relative overflow-hidden bg-gradient-to-br from-black/40 to-gray-900/40 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105">
+                    <div className={cn("absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500", feature.gradient)} />
+                    <CardContent className="p-8 relative">
+                      <div className="flex items-start gap-4 mb-4">
+                        <div className={cn("p-3 rounded-xl bg-gradient-to-r", feature.color)}>
+                          <Icon className="h-6 w-6 text-white" />
                         </div>
-                        <div className="text-center">
-                          <h3 className="text-xl font-bold text-white mb-1">
-                            {feature.text}
-                          </h3>
-                          <p className="text-sm text-gray-400">
-                            {feature.desc}
-                          </p>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xl font-bold text-white">{feature.title}</h3>
+                            <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded-full">
+                              {feature.stats}
+                            </span>
+                          </div>
+                          <p className="text-gray-300 leading-relaxed">{feature.description}</p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-
-                {/* Feature Indicators */}
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  {features.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentFeature(index)}
-                      className={cn(
-                        "w-2 h-2 rounded-full transition-all duration-300",
-                        currentFeature === index
-                          ? "bg-blue-400 w-8"
-                          : "bg-gray-600 hover:bg-gray-500"
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA Section */}
-              <div className="space-y-4">
-                <div className="max-w-2xl mx-auto">
-                  <WalletSelector onConnect={onConnect} />
-                </div>
-                <div className="flex justify-center">
-                  <Button
-                    variant="gradientOutline"
-                    size="lg"
-                    className="min-w-[180px]"
-                  >
-                    <Play className="h-5 w-5 mr-2" />
-                    Watch Demo
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-400">
-                  🎉 Free to join • No gas fees for basic features • 100%
-                  decentralized
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Network Performance Stats */}
-        <section className="bg-black border-y border-slate-800/50">
-          <div className="container mx-auto px-4 py-16">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  Powered by Somnia Network
-                </h2>
-                <p className="text-gray-400">
-                  Experience lightning-fast blockchain performance
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card variant="glass" className="group cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Activity className="h-8 w-8 text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-1">
-                    1M+
-                  </div>
-                  <div className="text-xs text-gray-400 font-medium">TPS</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Lightning Fast
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card variant="glass" className="group cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Coins className="h-8 w-8 text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <div className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-1">
-                    &lt;$0.01
-                  </div>
-                  <div className="text-xs text-gray-400 font-medium">
-                    Gas Fees
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Ultra Low Cost
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card variant="glass" className="group cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Zap className="h-8 w-8 text-purple-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-1">
-                    &lt;1s
-                  </div>
-                  <div className="text-xs text-gray-400 font-medium">
-                    Finality
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Instant Confirm
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card variant="glass" className="group cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Shield className="h-8 w-8 text-orange-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-                  <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-1">
-                    100%
-                  </div>
-                  <div className="text-xs text-gray-400 font-medium">
-                    EVM Compatible
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Full Support</div>
-                </CardContent>
-              </Card>
-            </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Enhanced Features Section */}
-        <section id="features" className="container mx-auto px-4 py-20">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-500/30 backdrop-blur-sm mb-6">
-              <Star className="h-4 w-4 text-purple-400" />
-              <span className="text-sm font-medium text-purple-300">
-                Why Choose Zapp?
-              </span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              The Complete Gaming
-              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                {" "}
-                Social Experience
-              </span>
-            </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Everything you need to connect, create, and earn in the gaming
-              community
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Feature 1 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl w-fit shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Gamepad2 className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors">
-                  Gaming Community
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Connect with millions of gamers worldwide. Share epic moments,
-                  strategies, and build lasting friendships in a dedicated
-                  gaming environment.
-                </p>
-                <div className="mt-6 flex items-center text-blue-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Join the community
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 2 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl w-fit shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Coins className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-purple-300 transition-colors">
-                  Earn SOMI Rewards
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Get rewarded for creating quality content and engaging with
-                  the community. Turn your gaming passion into real crypto
-                  earnings.
-                </p>
-                <div className="mt-6 flex items-center text-purple-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Start earning
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl w-fit shadow-lg shadow-yellow-500/25 group-hover:shadow-yellow-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Trophy className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-yellow-300 transition-colors">
-                  Achievement NFTs
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Unlock exclusive NFT achievements for milestones and special
-                  actions. Build your digital trophy collection and showcase
-                  your skills.
-                </p>
-                <div className="mt-6 flex items-center text-yellow-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Collect NFTs
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 4 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl w-fit shadow-lg shadow-green-500/25 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Shield className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-green-300 transition-colors">
-                  Blockchain Security
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Your content is secure and verifiable on the Somnia
-                  blockchain. True ownership of your digital assets with
-                  complete transparency.
-                </p>
-                <div className="mt-6 flex items-center text-green-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Learn more
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 5 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl w-fit shadow-lg shadow-pink-500/25 group-hover:shadow-pink-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Brain className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-pink-300 transition-colors">
-                  Smart Discovery
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Discover trending content and connect with gamers who share
-                  your interests through AI-powered recommendations.
-                </p>
-                <div className="mt-6 flex items-center text-pink-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Explore content
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Feature 6 */}
-            <Card variant="gaming" hover="lift" className="group relative">
-              <CardContent className="p-8">
-                <div className="relative mb-6">
-                  <div className="p-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl w-fit shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 transition-all duration-300 group-hover:scale-110">
-                    <Globe className="h-10 w-10 text-white" />
-                  </div>
-                  <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-indigo-300 transition-colors">
-                  Decentralized Storage
-                </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                  Share images, videos, and stories with IPFS-powered
-                  decentralized storage. Your content is preserved forever,
-                  truly yours.
-                </p>
-                <div className="mt-6 flex items-center text-indigo-400 text-sm font-medium">
-                  <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Store content
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Community Testimonials */}
-        <section className="container mx-auto px-4 py-20">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full border border-green-500/30 backdrop-blur-sm mb-6">
-              <Users className="h-4 w-4 text-green-400" />
-              <span className="text-sm font-medium text-green-300">
-                Community Love
-              </span>
-            </div>
-            <h2 className="text-4xl font-bold text-white mb-6">
-              What Gamers Are Saying
-            </h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <div className="relative h-40 flex items-center justify-center">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "absolute w-full transition-all duration-700",
-                    currentTestimonial === index
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-4"
-                  )}
-                >
-                  <Card variant="glass" className="p-8 text-center">
-                    <CardContent className="space-y-4">
-                      <p className="text-xl text-gray-300 italic">
-                        "{testimonial.text}"
-                      </p>
-                      <div className="space-y-1">
-                        <p className="font-bold text-white">
-                          {testimonial.author}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          {testimonial.game}
-                        </p>
+                      <div className="flex items-center text-purple-400 text-sm font-medium group-hover:text-white transition-colors">
+                        <ArrowRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
+                        Explore feature
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Social Proof Section */}
+        <section className="py-20 bg-gradient-to-br from-slate-900 to-purple-900/20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-full border border-green-500/30 backdrop-blur-sm mb-6">
+                <Heart className="h-4 w-4 text-green-400" />
+                <span className="text-sm font-medium text-green-300">Loved by Gamers</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Real Gamers, Real Rewards</h2>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">See how our community is earning and thriving on Zapp</p>
             </div>
 
-            <div className="flex items-center justify-center gap-2 mt-8">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={cn(
-                    "w-3 h-3 rounded-full transition-all duration-300",
-                    currentTestimonial === index
-                      ? "bg-green-400 scale-125"
-                      : "bg-gray-600 hover:bg-gray-500"
+            <div className="max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {testimonials.map((testimonial, index) => (
+                  <Card
+                    key={index}
+                    className="group bg-gradient-to-br from-black/60 to-gray-900/60 backdrop-blur-xl border border-white/10 hover:border-purple-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20"
+                  >
+                    <CardContent className="p-6">
+                      {/* Avatar and Rating */}
+                      <div className="flex flex-col items-center mb-6">
+                        <div className="relative mb-4">
+                          <img
+                            src={testimonial.avatar}
+                            alt={testimonial.author}
+                            className="w-20 h-20 rounded-2xl border-3 border-purple-400 shadow-lg group-hover:scale-110 transition-transform duration-300"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&auto=format";
+                            }}
+                          />
+                          <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            ✓
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mb-3">
+                          {[...Array(testimonial.rating)].map((_, i) => (
+                            <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Testimonial Text */}
+                      <div className="text-center mb-6">
+                        <p className="text-gray-200 leading-relaxed mb-4 italic">
+                          "{testimonial.text}"
+                        </p>
+                      </div>
+
+                      {/* Author Info */}
+                      <div className="border-t border-white/10 pt-4 text-center">
+                        <h4 className="font-bold text-white text-lg mb-1">{testimonial.author}</h4>
+                        <p className="text-purple-400 text-sm font-medium">{testimonial.role}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" className="py-20 bg-slate-950">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full border border-blue-500/30 backdrop-blur-sm mb-6">
+                <MessageCircle className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium text-blue-300">Got Questions?</span>
+              </div>
+              <h2 className="text-4xl font-bold text-white mb-4">Everything You Need to Know</h2>
+              <p className="text-xl text-gray-300">Quick answers to help you get started</p>
+            </div>
+
+            <div className="max-w-3xl mx-auto space-y-4">
+              {faqs.map((faq, index) => (
+                <Card key={index} className="bg-gradient-to-br from-black/60 to-gray-900/60 backdrop-blur-xl border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-300">
+                  <button
+                    onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
+                    className="w-full p-6 text-left flex items-center justify-between hover:bg-white/5 transition-colors group"
+                  >
+                    <h3 className="text-lg font-semibold text-white group-hover:text-purple-400 transition-colors">{faq.question}</h3>
+                    <div className={cn("transition-transform duration-300", openFAQ === index ? "rotate-45" : "")}>
+                      {openFAQ === index ? (
+                        <Minus className="h-5 w-5 text-purple-400" />
+                      ) : (
+                        <Plus className="h-5 w-5 text-purple-400" />
+                      )}
+                    </div>
+                  </button>
+                  {openFAQ === index && (
+                    <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-300">
+                      <p className="text-gray-300 leading-relaxed">{faq.answer}</p>
+                    </div>
                   )}
-                />
+                </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Enhanced Call to Action Section */}
-        <section className="relative overflow-hidden">
-          {/* Background gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/30 to-pink-900/20" />
+        {/* Final CTA Section */}
+        <section className="py-20 bg-gradient-to-br from-purple-950/40 via-blue-950/40 to-black/60 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(120,93,250,0.1),transparent_70%)]" />
+          <div className="container mx-auto px-4 text-center relative">
+            <div className="max-w-3xl mx-auto space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30 backdrop-blur-sm animate-pulse">
+                <Rocket className="h-4 w-4 text-yellow-400" />
+                <span className="text-sm font-medium text-yellow-300">Ready to Level Up?</span>
+              </div>
 
-          <div className="container mx-auto px-4 py-24 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="space-y-8">
-                {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30 backdrop-blur-sm">
-                  <Rocket className="h-5 w-5 text-yellow-400" />
-                  <span className="text-sm font-medium text-yellow-300">
-                    Ready to Level Up?
-                  </span>
-                  <Sparkles className="h-5 w-5 text-orange-400" />
-                </div>
+              <h2 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+                Your Gaming Journey
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Starts Now
+                </span>
+              </h2>
 
-                {/* Main CTA Content */}
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-                    Join the Gaming
-                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                      {" "}
-                      Revolution
-                    </span>
-                  </h2>
-                  <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                    Be part of the first Web3 social platform built specifically
-                    for the gaming community. Connect, earn, and achieve on
-                    Somnia's ultra-fast blockchain.
-                  </p>
-                </div>
+              <p className="text-xl text-gray-300 leading-relaxed">
+                Join thousands of gamers earning real rewards. No waiting, no complex setup.
+                <br />
+                <span className="text-purple-400 font-semibold">Connect wallet → Start earning → Build legacy</span>
+              </p>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                  <div className="flex-shrink-0">
-                    <WalletSelector onConnect={onConnect} />
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button
-                      variant="gradientOutline"
-                      size="lg"
-                      className="min-w-[160px] group"
-                    >
-                      <Play className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                      Watch Demo
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="min-w-[160px] group"
-                    >
-                      <MessageSquare className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-                      Join Discord
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Benefits */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-                  <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm border border-gray-700/50">
-                    <Gift className="h-5 w-5 text-green-400" />
-                    <span className="text-sm text-gray-300 font-medium">
-                      Free to join
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm border border-gray-700/50">
-                    <Zap className="h-5 w-5 text-blue-400" />
-                    <span className="text-sm text-gray-300 font-medium">
-                      No gas fees for basics
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-3 p-4 rounded-xl bg-gray-900/50 backdrop-blur-sm border border-gray-700/50">
-                    <Shield className="h-5 w-5 text-purple-400" />
-                    <span className="text-sm text-gray-300 font-medium">
-                      100% decentralized
-                    </span>
-                  </div>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <div className="w-full max-w-2xl">
+                  <WalletSelector onConnect={onConnect} />
                 </div>
               </div>
+
             </div>
           </div>
         </section>
 
-        {/* Enhanced Footer */}
-        <footer className="border-t border-slate-700/30 bg-slate-950/95 backdrop-blur-xl">
-          <div className="container mx-auto px-4 py-16">
-            {/* Main Footer Content */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-              {/* Brand Section */}
+        {/* Footer */}
+        <footer className="bg-black border-t border-white/10">
+          <div className="container mx-auto px-4 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
               <div className="space-y-4">
                 <Logo size="lg" href="#" className="text-white" />
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  The ultimate Web3 gaming social platform. Connect, earn, and
-                  achieve with the global gaming community.
+                  The Web3 gaming social platform where your skills pay the bills.
                 </p>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Sparkles className="h-4 w-4 text-blue-400" />
-                  <span>Built on Somnia Network</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-green-400">Somnia Network • Live</span>
                 </div>
               </div>
 
-              {/* Product Links */}
               <div className="space-y-4">
-                <h3 className="text-white font-semibold">Product</h3>
+                <h3 className="text-white font-semibold">Platform</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Features
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Achievements
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      SOMI Rewards
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      NFT Marketplace
-                    </a>
-                  </li>
+                  <li><a href="#features" className="text-gray-400 hover:text-purple-400 transition-colors">Features</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">SOMI Token</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">NFT Collection</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Leaderboards</a></li>
                 </ul>
               </div>
 
-              {/* Community Links */}
               <div className="space-y-4">
                 <h3 className="text-white font-semibold">Community</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Discord
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Twitter
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Reddit
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Telegram
-                    </a>
-                  </li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Discord</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Twitter</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Telegram</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Reddit</a></li>
                 </ul>
               </div>
 
-              {/* Support Links */}
               <div className="space-y-4">
                 <h3 className="text-white font-semibold">Support</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Help Center
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Documentation
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Contact Us
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      Bug Reports
-                    </a>
-                  </li>
+                  <li><a href="#faq" className="text-gray-400 hover:text-purple-400 transition-colors">FAQ</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Help Center</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Contact</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Bug Reports</a></li>
                 </ul>
               </div>
             </div>
 
-            {/* Bottom Footer */}
-            <div className="border-t border-slate-700/30 pt-8">
+            <div className="border-t border-white/10 pt-6">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-gray-400 text-sm">
-                  © 2024 Zapp - The Ultimate Web3 Gaming Social Platform. All
-                  rights reserved.
-                </p>
-                <div className="flex items-center gap-6 text-sm">
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Privacy Policy
-                  </a>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Terms of Service
-                  </a>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    <span className="text-green-400 text-xs">
-                      Somnia Network Online
-                    </span>
-                  </div>
+                <p className="text-gray-400 text-sm">© 2025 Zapp. Built for gamers, by a gamer.</p>
+                <div className="flex items-center gap-4 text-sm">
+                  <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Privacy</a>
+                  <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Terms</a>
+                  <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">Cookies</a>
                 </div>
               </div>
             </div>
