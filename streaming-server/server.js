@@ -22,6 +22,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Serve HLS files statically
+app.use('/media', express.static(path.join(__dirname, 'media')));
+
 // Initialize Socket.IO with CORS
 const io = socketIo(server, {
   cors: corsOptions
@@ -49,7 +52,8 @@ const nmsConfig = {
   http: {
     port: 8000,
     allow_origin: '*',
-    mediaroot: './media'
+    mediaroot: './media',
+    webroot: './media'
   },
   // Enable HLS transcoding
   relay: {
@@ -125,7 +129,7 @@ async function updateStreamStatus(streamKey, isActive, stats = {}) {
       updateData.started_at = new Date().toISOString();
       updateData.rtmp_url = `rtmp://localhost:1935/live/${streamKey}`;
       // Only set HLS URL if FFmpeg is available for transcoding
-      updateData.hls_url = ffmpegAvailable ? `http://localhost:8000/hls/${streamKey}/index.m3u8` : null;
+      updateData.hls_url = ffmpegAvailable ? `http://localhost:9000/media/hls/${streamKey}/index.m3u8` : null;
     } else {
       updateData.ended_at = new Date().toISOString();
     }
@@ -154,13 +158,25 @@ function startHLSTranscoding(streamKey) {
       '-c:v', 'libx264',
       '-c:a', 'aac',
       '-f', 'hls',
-      '-hls_time', '2',
-      '-hls_list_size', '10',
-      '-hls_flags', 'delete_segments',
-      '-preset', 'veryfast',
+      '-hls_time', '2',           // Shorter segments for reduced gaps
+      '-hls_list_size', '6',      // Keep fewer segments for live streaming
+      '-hls_flags', 'delete_segments+independent_segments+program_date_time+append_list',
+      '-hls_segment_type', 'mpegts',
+      '-preset', 'veryfast',      // Faster encoding for lower latency
       '-tune', 'zerolatency',
-      '-g', '30',
-      '-sc_threshold', '0',
+      '-g', '60',                 // GOP size matching segment duration (2s * 30fps)
+      '-keyint_min', '30',        // Keyframe every second
+      '-sc_threshold', '0',       // Disable scene change detection
+      '-b:v', '2000k',           // Slightly lower bitrate for stability
+      '-maxrate', '2000k',       // Max bitrate
+      '-bufsize', '4000k',       // Buffer size (2x bitrate)
+      '-profile:v', 'main',       // Use main profile for better compression
+      '-level', '4.0',           // Higher level for better quality
+      '-pix_fmt', 'yuv420p',
+      '-force_key_frames', 'expr:gte(t,n_forced*2)', // Force keyframes every 2 seconds
+      '-segment_list_flags', 'live',  // Enable live segment list
+      '-segment_time', '2',       // Explicit segment time
+      '-avoid_negative_ts', 'make_zero',  // Avoid timestamp issues
       '-loglevel', 'info',
       path.join(hlsOutputPath, 'index.m3u8')
     ];

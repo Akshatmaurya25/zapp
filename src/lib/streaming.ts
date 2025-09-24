@@ -290,6 +290,6 @@ export function generateStreamUrl(streamKey: string): {
 } {
   return {
     rtmp: `rtmp://localhost:1935/live/${streamKey}`,
-    hls: `http://localhost:8000/live/${streamKey}/index.m3u8`
+    hls: `http://localhost:9000/media/hls/${streamKey}/index.m3u8`
   }
 }

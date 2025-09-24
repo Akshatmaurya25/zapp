@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           viewer_count: 0,
           total_tips: 0,
           rtmp_url: `rtmp://localhost:1935/live/${streamKey}`,
-          hls_url: `http://localhost:8000/live/${streamKey}/index.m3u8`,
+          hls_url: `http://localhost:9000/media/hls/${streamKey}/index.m3u8`,
           started_at: new Date().toISOString() // Set start time when created
         }
       ])
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       stream,
       rtmp_url: `rtmp://localhost:1935/live/${streamKey}`,
       stream_key: streamKey,
-      hls_url: `http://localhost:8000/live/${streamKey}/index.m3u8`
+      hls_url: `http://localhost:9000/media/hls/${streamKey}/index.m3u8`
     })
   } catch (error) {
     console.error('Stream creation error:', error)

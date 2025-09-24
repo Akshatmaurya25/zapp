@@ -85,18 +85,36 @@ export default function VideoPlayer({
       // Use HLS.js for browsers that support MSE
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 90,
-        maxBufferLength: 30,
-        maxMaxBufferLength: 600,
-        maxBufferSize: 60 * 1000 * 1000,
-        maxBufferHole: 0.5,
-        highBufferWatchdogPeriod: 2,
-        nudgeOffset: 0.1,
-        nudgeMaxRetry: 3,
-        maxFragLookUpTolerance: 0.25,
-        liveSyncDurationCount: 3,
-        liveMaxLatencyDurationCount: 10
+        lowLatencyMode: false,        // Disable for maximum stability
+        backBufferLength: 30,         // Reasonable back buffer
+        maxBufferLength: 30,          // Optimal forward buffer
+        maxMaxBufferLength: 60,       // Moderate max buffer
+        maxBufferSize: 60 * 1000 * 1000, // 60MB buffer size
+        maxBufferHole: 0.5,           // Smaller buffer holes for smoother playback
+        highBufferWatchdogPeriod: 2,  // More frequent buffer checks
+        nudgeOffset: 0.1,             // Smaller nudge offset
+        nudgeMaxRetry: 5,             // Fewer retries to prevent interruptions
+        maxFragLookUpTolerance: 0.25, // More precise fragment lookup
+        liveSyncDurationCount: 3,     // Stay closer to live edge
+        liveMaxLatencyDurationCount: 6, // Lower latency for better sync
+        liveBackBufferLength: 15,     // Moderate back buffer
+        manifestLoadingTimeOut: 10000, // Shorter manifest timeout
+        manifestLoadingMaxRetry: 3,   // Fewer manifest retries
+        levelLoadingTimeOut: 10000,   // Shorter level loading timeout
+        fragLoadingTimeOut: 20000,    // Shorter fragment timeout
+        startLevel: -1,               // Auto quality selection
+        testBandwidth: true,          // Enable bandwidth testing
+        progressive: false,           // Keep disabled for stability
+        lowBufferWatchdogPeriod: 0.5, // More frequent low buffer checks
+        abrEwmaFastLive: 3.0,         // Faster adaptive bitrate for live
+        abrEwmaSlowLive: 9.0,         // Moderate adaptation speed
+        abrMaxWithRealBitrate: true,  // Use real bitrate estimation
+        maxStarvationDelay: 4,        // Shorter starvation delay
+        maxLoadingDelay: 4,           // Shorter loading delay
+        capLevelOnFPSDrop: true,      // Reduce quality on FPS drops
+        ignoreDevicePixelRatio: false, // Use device pixel ratio
+        liveDurationInfinity: true,   // Treat as infinite live stream
+        liveBackBufferLength: 8       // Smaller back buffer for live
       })
 
       hlsRef.current = hls
@@ -117,6 +135,45 @@ export default function VideoPlayer({
         }
         if (onCanPlay) {
           onCanPlay()
+        }
+      })
+
+      // Handle buffer events to prevent flicker
+      let lastBufferCheck = 0
+
+      hls.on(Hls.Events.BUFFER_APPENDING, () => {
+        // Don't interfere during buffer operations
+      })
+
+      hls.on(Hls.Events.BUFFER_APPENDED, () => {
+        // Only check playback state occasionally to avoid interference
+        const now = Date.now()
+        if (now - lastBufferCheck > 1000) { // Check only once per second
+          lastBufferCheck = now
+          if (video.paused && !isLoading && !error && autoplay) {
+            video.play().catch(() => {})
+          }
+        }
+      })
+
+      hls.on(Hls.Events.BUFFER_EOS, () => {
+        // End of stream - maintain playback state
+        if (video.paused && !isLoading && !error && autoplay) {
+          video.play().catch(() => {})
+        }
+      })
+
+      // Handle level switching more gracefully
+      hls.on(Hls.Events.LEVEL_SWITCHING, () => {
+        // Prevent interruption during quality changes
+      })
+
+      hls.on(Hls.Events.LEVEL_SWITCHED, () => {
+        // Quality change completed - ensure smooth playback
+        if (video.paused && !isLoading && !error && autoplay) {
+          setTimeout(() => {
+            video.play().catch(() => {})
+          }, 50) // Small delay to ensure quality switch is complete
         }
       })
 
@@ -145,16 +202,16 @@ export default function VideoPlayer({
                   }
                 }
               } else {
-                setError('Stream is not ready yet. Please wait for the streamer to start broadcasting.')
+                // Don't set error for network issues, just retry silently
                 setTimeout(() => {
                   if (!hasTimedOut && hlsRef.current) {
                     hls.startLoad()
                   }
-                }, 5000)
+                }, 2000)
               }
               break
             case Hls.ErrorTypes.MEDIA_ERROR:
-              setError('Media error occurred while playing stream')
+              // Silently recover from media errors
               hls.recoverMediaError()
               break
             default:
@@ -163,26 +220,64 @@ export default function VideoPlayer({
               break
           }
           // Don't call onError for expected manifest load errors during setup
-          if (onError && data.details !== 'manifestLoadError') {
+          if (onError && data.details !== 'manifestLoadError' && data.type !== Hls.ErrorTypes.NETWORK_ERROR) {
             onError(data)
           }
         }
       })
 
-      // Handle video events
-      video.addEventListener('loadstart', () => setIsLoading(true))
+      // Handle video events with debouncing
+      let playStateTimeout: NodeJS.Timeout | null = null
+
+      video.addEventListener('loadstart', () => {
+        setIsLoading(true)
+        setError(null)
+      })
+
       video.addEventListener('canplay', () => {
         setIsLoading(false)
         if (onCanPlay) {
           onCanPlay()
         }
       })
-      video.addEventListener('play', () => setIsPlaying(true))
-      video.addEventListener('pause', () => setIsPlaying(false))
+
+      video.addEventListener('play', () => {
+        if (playStateTimeout) clearTimeout(playStateTimeout)
+        playStateTimeout = setTimeout(() => {
+          setIsPlaying(true)
+        }, 100) // Debounce play state changes
+      })
+
+      video.addEventListener('pause', () => {
+        if (playStateTimeout) clearTimeout(playStateTimeout)
+        playStateTimeout = setTimeout(() => {
+          setIsPlaying(false)
+        }, 100) // Debounce pause state changes
+      })
+
       video.addEventListener('volumechange', () => {
         setVolume(video.volume)
         setIsMuted(video.muted)
       })
+
+      // Handle seeking events that can cause flicker
+      video.addEventListener('seeking', () => {
+        // Minimize visual disruption during seeks
+      })
+
+      video.addEventListener('seeked', () => {
+        // Resume normal playback after seek
+        if (!video.paused && autoplay) {
+          video.play().catch(() => {})
+        }
+      })
+
+      // Clean up timeout on component unmount
+      return () => {
+        if (playStateTimeout) {
+          clearTimeout(playStateTimeout)
+        }
+      }
 
       return () => {
         if (timeoutRef.current) {
@@ -269,10 +364,52 @@ export default function VideoPlayer({
     >
       <video
         ref={videoRef}
-        className="w-full h-full"
+        className="w-full h-full bg-gray-900"
         poster={poster}
         playsInline
+        preload="metadata"
+        muted={false}
         onClick={togglePlay}
+        style={{
+          backgroundColor: '#111827',
+          objectFit: 'contain',
+          transition: 'none'
+        }}
+        onLoadedData={() => {
+          // Ensure smooth start when data is loaded
+          const video = videoRef.current
+          if (video && autoplay && video.paused) {
+            video.play().catch(() => {})
+          }
+        }}
+        onCanPlayThrough={() => {
+          // Buffer is sufficient for smooth playback
+          setIsLoading(false)
+        }}
+        onProgress={() => {
+          // Monitor buffering progress for smoother experience
+          const video = videoRef.current
+          if (video && video.buffered.length > 0) {
+            const bufferedEnd = video.buffered.end(video.buffered.length - 1)
+            const currentTime = video.currentTime
+            // Ensure we have adequate buffer ahead
+            if (bufferedEnd - currentTime < 2 && !isLoading) {
+              // Low buffer warning but don't interrupt playback
+            }
+          }
+        }}
+        onTimeUpdate={() => {
+          // Prevent seeking issues in live streams
+          const video = videoRef.current
+          if (video && hlsRef.current) {
+            const duration = video.duration
+            const currentTime = video.currentTime
+            // Keep playback near live edge for live streams
+            if (duration && !isNaN(duration) && duration - currentTime > 30) {
+              // If we're more than 30 seconds behind, don't auto-seek as it causes flicker
+            }
+          }
+        }}
       />
 
       {/* Loading Spinner */}

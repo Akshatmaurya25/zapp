@@ -46,14 +46,8 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
     fetchStream()
     fetchTips()
 
-    // Add some sample chat messages for demonstration
-    const sampleMessages = [
-      { id: '1', user: 'CryptoGamer42', message: 'Great stream! Love your setup! 🎮', timestamp: new Date(Date.now() - 300000) },
-      { id: '2', user: 'StreamFan', message: 'First time watching, this is amazing!', timestamp: new Date(Date.now() - 240000) },
-      { id: '3', user: 'NFTCollector', message: 'Can\'t wait to earn those NFT milestones! 💎', timestamp: new Date(Date.now() - 180000) },
-      { id: '4', user: 'Web3Dev', message: 'The future of streaming is here! 🚀', timestamp: new Date(Date.now() - 120000) },
-    ]
-    setChatMessages(sampleMessages)
+    // Start with empty chat - users can begin the conversation
+    setChatMessages([])
 
     // Set up real-time updates
     const socket = streamingService.connectSocket()
@@ -497,82 +491,6 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
               </div>
             </Card>
 
-            {/* Watch Progress & NFT Milestones */}
-            {stream.is_active && (
-              <Card className="border-border-primary bg-surface-secondary">
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-text-primary flex items-center gap-2">
-                      ⏱️ Watch Progress
-                    </h3>
-                    <span className="text-sm font-mono text-purple-400">
-                      {formatWatchTime(watchTime)}
-                    </span>
-                  </div>
-
-                  {/* Progress bar with milestones */}
-                  <div className="relative mb-4">
-                    <div className="w-full bg-background-primary rounded-full h-3 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-1000 ease-out"
-                        style={{ width: `${Math.min((watchTime / 7200) * 100, 100)}%` }}
-                      />
-                    </div>
-
-                    {/* Milestone markers */}
-                    <div className="absolute top-0 w-full h-3 flex justify-between">
-                      {getNFTMilestones().map((milestone, index) => (
-                        <div
-                          key={index}
-                          className={`w-4 h-4 rounded-full border-2 -mt-0.5 relative ${
-                            milestone.unlocked
-                              ? 'bg-green-500 border-green-400'
-                              : 'bg-gray-600 border-gray-500'
-                          }`}
-                          style={{ left: `${(milestone.time / 7200) * 100}%`, transform: 'translateX(-50%)' }}
-                        >
-                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap">
-                            <span className={milestone.unlocked ? 'text-green-400' : 'text-gray-500'}>
-                              {milestone.icon}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* NFT Milestones Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {getNFTMilestones().map((milestone, index) => (
-                      <div
-                        key={index}
-                        className={`p-2 rounded-lg border text-center transition-all ${
-                          milestone.unlocked
-                            ? 'bg-green-600/20 border-green-500/50 text-green-300'
-                            : 'bg-gray-700/20 border-gray-600/50 text-gray-400'
-                        }`}
-                      >
-                        <div className="text-lg mb-1">{milestone.icon}</div>
-                        <div className="text-xs font-medium">{milestone.label}</div>
-                        <div className="text-xs opacity-75">
-                          {Math.floor(milestone.time / 60)}m
-                        </div>
-                        {milestone.unlocked && (
-                          <Button
-                            size="sm"
-                            className="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs h-6"
-                            onClick={() => showToast({ title: `${milestone.label} ready to mint! 🎉`, type: 'success' })}
-                          >
-                            Mint NFT
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            )}
-
             {/* Stream Info */}
             <Card className="border-border-primary bg-surface-secondary">
               <div className="p-6">
@@ -672,7 +590,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 </div>
 
                 {/* Stream Stats */}
-                <div className={`grid gap-4 p-4 bg-background-primary rounded-lg border border-border-secondary ${stream.is_active ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                <div className={`grid gap-4 p-4 bg-background-primary rounded-lg border border-border-secondary mb-6 ${stream.is_active ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-purple-400 mb-1">
                       <Users className="w-4 h-4" />
@@ -733,6 +651,113 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 </div>
               </div>
             </Card>
+
+            {/* Watch Progress & NFT Milestones - Moved Below Stream Info */}
+            {stream.is_active && (
+              <Card className="border-border-primary bg-surface-secondary">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                      ⏱️ Watch Progress
+                    </h3>
+                    <span className="text-sm font-mono text-purple-400">
+                      {formatWatchTime(watchTime)}
+                    </span>
+                  </div>
+
+                  {/* Progress bar with milestones */}
+                  <div className="relative mb-4">
+                    <div className="w-full bg-background-primary rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-1000 ease-out"
+                        style={{ width: `${Math.min((watchTime / 7200) * 100, 100)}%` }}
+                      />
+                    </div>
+
+                    {/* Milestone markers */}
+                    <div className="absolute top-0 w-full h-3 flex justify-between">
+                      {getNFTMilestones().map((milestone, index) => (
+                        <div
+                          key={index}
+                          className={`w-4 h-4 rounded-full border-2 -mt-0.5 relative ${
+                            milestone.unlocked
+                              ? 'bg-green-500 border-green-400'
+                              : 'bg-gray-600 border-gray-500'
+                          }`}
+                          style={{ left: `${(milestone.time / 7200) * 100}%`, transform: 'translateX(-50%)' }}
+                        >
+                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap">
+                            <span className={milestone.unlocked ? 'text-green-400' : 'text-gray-500'}>
+                              {milestone.icon}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* NFT Milestones Grid - Improved Design */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {getNFTMilestones().map((milestone, index) => (
+                      <div
+                        key={index}
+                        className={`relative p-4 rounded-xl border-2 text-center transition-all transform hover:scale-105 ${
+                          milestone.unlocked
+                            ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-400/60 text-green-300 shadow-lg shadow-green-500/20'
+                            : 'bg-gradient-to-br from-gray-700/10 to-gray-800/10 border-gray-600/30 text-gray-400 hover:border-gray-500/50'
+                        }`}
+                      >
+                        {/* Achievement Icon */}
+                        <div className={`text-2xl mb-2 transition-transform ${
+                          milestone.unlocked ? 'animate-bounce' : ''
+                        }`}>
+                          {milestone.icon}
+                        </div>
+
+                        {/* Achievement Info */}
+                        <div className="text-xs font-semibold mb-1 leading-tight">
+                          {milestone.label.replace(' NFT', '')}
+                        </div>
+                        <div className="text-xs opacity-75 mb-2">
+                          {Math.floor(milestone.time / 60)}min
+                        </div>
+
+                        {/* Progress indicator for locked milestones */}
+                        {!milestone.unlocked && (
+                          <div className="w-full bg-gray-700/30 rounded-full h-1.5 mb-2">
+                            <div
+                              className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min((watchTime / milestone.time) * 100, 100)}%` }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {milestone.unlocked ? (
+                          <Button
+                            size="sm"
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs h-7 rounded-lg shadow-sm"
+                            onClick={() => showToast({ title: `${milestone.label} ready to mint! 🎉`, type: 'success' })}
+                          >
+                            Mint NFT
+                          </Button>
+                        ) : (
+                          <div className="w-full text-xs text-gray-500 h-7 flex items-center justify-center">
+                            {Math.floor((milestone.time - watchTime) / 60)}m left
+                          </div>
+                        )}
+
+                        {/* Unlock effect */}
+                        {milestone.unlocked && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-xl animate-pulse" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )}
+
           </div>
 
           {/* Sidebar */}
@@ -750,27 +775,27 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                   </h3>
                 </div>
 
-                {/* Chat Messages - Twitch Style */}
-                <div className="flex-1 overflow-y-auto px-2 py-2 custom-scrollbar">
+                {/* Chat Messages - Clean Twitch Style */}
+                <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
                   {chatMessages.length > 0 ? (
                     chatMessages.map((msg) => (
-                      <div key={msg.id} className="flex items-start gap-2 px-2 py-1 hover:bg-background-primary/50 rounded text-sm">
-                        {/* User Avatar */}
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                      <div key={msg.id} className="flex items-start gap-3 px-2 py-2 hover:bg-background-primary/30 rounded-md text-sm transition-colors">
+                        {/* User Avatar - Larger and cleaner */}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                           {msg.user[0].toUpperCase()}
                         </div>
 
                         {/* Message Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-purple-400 text-sm">
                               {msg.user}
                             </span>
-                            <span className="text-xs text-text-tertiary">
+                            <span className="text-xs text-text-tertiary px-1">
                               {msg.timestamp.toLocaleTimeString()}
                             </span>
                           </div>
-                          <div className="text-text-primary text-sm break-words">
+                          <div className="text-text-primary text-sm break-words leading-relaxed">
                             {msg.message}
                           </div>
                         </div>
@@ -787,25 +812,46 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                   )}
                 </div>
 
-                {/* Chat Input */}
-                <div className="p-3 border-t border-border-secondary">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
-                      placeholder="Type a message..."
-                      className="flex-1 px-3 py-2 bg-background-primary border border-border-secondary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                    />
-                    <Button
-                      onClick={sendChatMessage}
-                      disabled={!chatMessage.trim()}
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      Send
-                    </Button>
+                {/* Chat Input - Improved layout */}
+                <div className="p-4 border-t border-border-secondary bg-background-primary/30">
+                  <div className="flex gap-3 items-end">
+                    {/* Current user avatar for input */}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mb-1">
+                      <img
+                        src="https://github.com/identicons/jasonlong.png"
+                        alt="Your avatar"
+                        className="w-full h-full rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                          if (fallback) fallback.style.display = 'flex'
+                        }}
+                      />
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold rounded-full" style={{ display: 'none' }}>
+                        ZP
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                        placeholder="Say something nice..."
+                        className="flex-1 px-4 py-2 bg-background-primary border border-border-secondary rounded-full text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition-all"
+                      />
+                      <Button
+                        onClick={sendChatMessage}
+                        disabled={!chatMessage.trim()}
+                        size="sm"
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-4 shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
