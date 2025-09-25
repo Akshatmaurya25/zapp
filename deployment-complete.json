@@ -1,0 +1,20 @@
+{
+  "network": "somnia-testnet",
+  "chainId": "50312",
+  "contracts": {
+    "testToken": "0x91E6c7265bD26f979F97f5eAa8c0dcC5d0F4bf51",
+    "custody": "0x0ACE0B855022f35C547258B084C0c1aEC8397A71",
+    "adjudicator": "0x902a2964809e739074583f72cfDB524Fa67AA16e"
+  },
+  "deployer": "0xE81032A865Dd45BF39E8430f72b9FA8f2e2Cb030",
+  "deployedAt": "2025-09-24T22:24:59.825Z",
+  "blockNumber": 185085177,
+  "config": {
+    "tokenName": "Nitrolite Test Token",
+    "tokenSymbol": "NTT",
+    "tokenDecimals": 18,
+    "initialSupply": "1000000",
+    "faucetAmount": "1000",
+    "faucetCooldown": "24 hours"
+  }
+}

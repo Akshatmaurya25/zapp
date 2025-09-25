@@ -4,7 +4,7 @@ require("dotenv").config({ path: ".env.local" });
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.19",
+    version: "0.8.26",
     settings: {
       optimizer: {
         enabled: true,
@@ -36,10 +36,33 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true,
     },
+    // Base Networks for State Channels
+    "base-sepolia": {
+      url: "https://sepolia.base.org",
+      chainId: 84532,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gasPrice: 1000000000, // 1 gwei - Base is much cheaper
+      gas: 2100000,
+      confirmations: 1,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
+    "base-mainnet": {
+      url: "https://mainnet.base.org",
+      chainId: 8453,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gasPrice: 1000000000, // 1 gwei - Base is much cheaper
+      gas: 2100000,
+      confirmations: 1,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
   },
   etherscan: {
     apiKey: {
       "somnia-testnet": "your-api-key-here", // If verification is supported
+      "base-sepolia": process.env.BASESCAN_API_KEY || "your-basescan-api-key-here",
+      "base-mainnet": process.env.BASESCAN_API_KEY || "your-basescan-api-key-here",
     },
     customChains: [
       {
@@ -50,10 +73,26 @@ module.exports = {
           browserURL: "https://shannon-explorer.somnia.network/",
         },
       },
+      {
+        network: "base-sepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          browserURL: "https://sepolia.basescan.org/",
+        },
+      },
+      {
+        network: "base-mainnet",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.basescan.org/api",
+          browserURL: "https://basescan.org/",
+        },
+      },
     ],
   },
   paths: {
-    sources: "./contracts",
+    sources: "./src/contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",

@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/Badge'
 import { FollowButton } from '@/components/ui/FollowButton'
 import { CommentModal } from './CommentModal'
 import { DonationModal } from './DonationModal'
+import NitroliteUniversalTipModal from '@/components/tipping/NitroliteUniversalTipModal'
+import WalletDebugger from '@/components/debug/WalletDebugger'
 import { VideoPlayer } from '@/components/ui/VideoPlayer'
 import { IPFSImage } from '@/components/ui/IPFSImage'
 import { useToastHelpers } from '@/components/ui/Toast'
@@ -55,6 +57,7 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
   const [showActions, setShowActions] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showDonation, setShowDonation] = useState(false)
+  const [showNitrolite, setShowNitrolite] = useState(false)
 
   const isOwner = user?.id === post.user?.id
   const isLiked = post.user_has_liked || false
@@ -473,15 +476,27 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
                 <span className="text-xs md:text-sm font-medium hidden md:inline">Share</span>
               </button>
 
-              {/* Donate Button - Always show, better visual hierarchy */}
+              {/* Nitrolite Tip Button - Primary */}
+              {!isOwner && (
+                <button
+                  onClick={() => setShowNitrolite(true)}
+                  className="group flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-full text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-300 md:hover:scale-105"
+                  title="Send instant USDC micropayments"
+                >
+                  <Zap className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="text-xs md:text-sm font-medium">Nitrolite</span>
+                </button>
+              )}
+
+              {/* Classic Donate Button */}
               {!isOwner && (
                 <button
                   onClick={handleDonate}
                   className="group flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-full text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-300 md:hover:scale-105"
-                  title="Send a tip to the creator"
+                  title="Send a classic crypto tip"
                 >
                   <Coins className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-xs md:text-sm font-medium">Tip</span>
+                  <span className="text-xs md:text-sm font-medium hidden md:inline">Classic</span>
                 </button>
               )}
             </div>
@@ -510,6 +525,26 @@ export function PostItem({ post, onEdit, onDelete, className }: PostItemProps) {
         isOpen={showDonation}
         onClose={() => setShowDonation(false)}
       />
+
+      {/* Nitrolite Universal Tip Modal */}
+      <NitroliteUniversalTipModal
+        isOpen={showNitrolite}
+        onClose={() => setShowNitrolite(false)}
+        context="post"
+        post={{
+          id: post.id,
+          title: post.content?.slice(0, 100) + (post.content?.length > 100 ? '...' : ''),
+          content: post.content,
+          author: {
+            display_name: post.user?.display_name || post.user?.username || 'Anonymous',
+            username: post.user?.username,
+            wallet_address: post.user?.wallet_address
+          }
+        }}
+      />
+
+      {/* Debug Component - Development Only */}
+      <WalletDebugger post={post} />
     </Card>
   )
 }

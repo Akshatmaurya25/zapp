@@ -88,7 +88,7 @@ export function Navigation() {
                     <Button
                       variant={item.active ? "secondary" : "ghost"}
                       size="sm"
-                      className={`gap-2 ${item.active ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                      className={`gap-2 ${item.active ? 'bg-gradient-to-r from-primary-500 to-secondary-500' : 'text-text-secondary hover:text-text-primary'}`}
                       onClick={() => setIsStreamingDropdownOpen(!isStreamingDropdownOpen)}
                     >
                       <Icon className="h-4 w-4" />
@@ -124,7 +124,7 @@ export function Navigation() {
                   <Button
                     variant={item.active ? "secondary" : "ghost"}
                     size="sm"
-                    className={`gap-2 ${item.active ? 'bg-primary-500 text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`gap-2 ${item.active ? 'bg-gradient-to-r from-primary-500 to-secondary-500' : 'text-text-secondary hover:text-text-primary'}`}
                   >
                     <Icon className="h-4 w-4" />
                     {item.label}

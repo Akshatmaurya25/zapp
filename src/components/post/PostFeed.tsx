@@ -136,7 +136,7 @@ export function PostFeed({
                 Trending
               </button>
             </div>
-
+               
             {/* Refresh Button */}
             <Button
               onClick={handleRefresh}

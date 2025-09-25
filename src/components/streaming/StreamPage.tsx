@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Avatar } from '@/components/ui/Avatar'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar } from "@/components/ui/Avatar";
 import {
   Eye,
   DollarSign,
@@ -15,208 +15,271 @@ import {
   Users,
   ArrowLeft,
   Gamepad2,
-  Gift
-} from 'lucide-react'
-import VideoPlayer from './VideoPlayer'
-import SimpleRTMPPlayer from './SimpleRTMPPlayer'
-import TipModal from './TipModal'
-import { streamingService, Stream, StreamTip, formatViewerCount, formatStreamDuration } from '@/lib/streaming'
-import { useToast } from '@/components/ui/Toast'
+  Gift,
+} from "lucide-react";
+import VideoPlayer from "./VideoPlayer";
+import SimpleRTMPPlayer from "./SimpleRTMPPlayer";
+import TipModal from "./TipModal";
+import NitroliteUniversalTipModal from "@/components/tipping/NitroliteUniversalTipModal";
+import WalletDebugger from "@/components/debug/WalletDebugger";
+import {
+  YellowTipNotifications,
+  LiveTipCounter,
+} from "@/components/notifications/YellowTipNotifications";
+import {
+  streamingService,
+  Stream,
+  StreamTip,
+  formatViewerCount,
+  formatStreamDuration,
+} from "@/lib/streaming";
+import { useToast } from "@/components/ui/Toast";
 
 interface StreamPageProps {
-  streamKey: string
+  streamKey: string;
 }
 
 export default function StreamPage({ streamKey }: StreamPageProps) {
-  const [stream, setStream] = useState<Stream | null>(null)
-  const [tips, setTips] = useState<StreamTip[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showTipModal, setShowTipModal] = useState(false)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [isReceivingContent, setIsReceivingContent] = useState(false)
-  const [hlsFailed, setHlsFailed] = useState(false)
-  const [watchTime, setWatchTime] = useState(0) // in seconds
-  const [chatMessages, setChatMessages] = useState<Array<{id: string, user: string, message: string, timestamp: Date}>>([])
-  const [chatMessage, setChatMessage] = useState('')
+  const [stream, setStream] = useState<Stream | null>(null);
+  const [tips, setTips] = useState<StreamTip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [showNitroliteModal, setShowNitroliteModal] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isReceivingContent, setIsReceivingContent] = useState(false);
+  const [hlsFailed, setHlsFailed] = useState(false);
+  const [watchTime, setWatchTime] = useState(0); // in seconds
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ id: string; user: string; message: string; timestamp: Date }>
+  >([]);
+  const [chatMessage, setChatMessage] = useState("");
 
-  const router = useRouter()
-  const { showToast } = useToast()
+  const router = useRouter();
+  const { showToast } = useToast();
 
   useEffect(() => {
-    fetchStream()
-    fetchTips()
+    fetchStream();
+    fetchTips();
 
     // Start with empty chat - users can begin the conversation
-    setChatMessages([])
+    setChatMessages([]);
 
     // Set up real-time updates
-    const socket = streamingService.connectSocket()
-    streamingService.joinStream(streamKey)
+    const socket = streamingService.connectSocket();
+    streamingService.joinStream(streamKey);
 
     // Watch time tracking
     const watchTimeInterval = setInterval(() => {
       if (stream?.is_active && stream?.is_live) {
-        setWatchTime(prev => prev + 1)
+        setWatchTime((prev) => prev + 1);
       }
-    }, 1000)
+    }, 1000);
 
     // Check for streaming content every 5 seconds
     const checkStreamingContent = async () => {
       try {
-        const response = await fetch(`http://localhost:9000/api/streams/${streamKey}/status`)
+        const response = await fetch(
+          `http://localhost:9000/api/streams/${streamKey}/status`
+        );
         if (response.ok) {
-          const data = await response.json()
-          console.log('Stream status check:', data)
-          setIsReceivingContent(data.isReceivingContent || false)
+          const data = await response.json();
+          console.log("Stream status check:", data);
+          setIsReceivingContent(data.isReceivingContent || false);
         } else {
-          console.warn('Stream status check failed:', response.status)
-          setIsReceivingContent(false)
+          console.warn("Stream status check failed:", response.status);
+          setIsReceivingContent(false);
         }
       } catch (error) {
-        console.error('Stream status check error:', error)
+        console.error("Stream status check error:", error);
         // If the streaming server is down, assume no content is being received
-        setIsReceivingContent(false)
+        setIsReceivingContent(false);
       }
-    }
+    };
 
     // Initial check
-    checkStreamingContent()
+    checkStreamingContent();
 
     // Set up interval for content checking
-    const contentCheckInterval = setInterval(checkStreamingContent, 5000)
+    const contentCheckInterval = setInterval(checkStreamingContent, 5000);
 
     streamingService.onViewerCountUpdate((data) => {
       if (data.streamKey === streamKey) {
-        setStream(prev => prev ? { ...prev, viewer_count: data.viewerCount } : null)
+        setStream((prev) =>
+          prev ? { ...prev, viewer_count: data.viewerCount } : null
+        );
       }
-    })
+    });
 
     streamingService.onNewTip((tipData) => {
       if (tipData.streamKey === streamKey) {
-        setTips(prev => [tipData.tip, ...prev])
-        setStream(prev => prev ? {
-          ...prev,
-          total_tips: (parseFloat(prev.total_tips?.toString() || '0') + parseFloat(tipData.tip.amount)).toString()
-        } : null)
+        setTips((prev) => [tipData.tip, ...prev]);
+        setStream((prev) =>
+          prev
+            ? {
+                ...prev,
+                total_tips: (
+                  parseFloat(prev.total_tips?.toString() || "0") +
+                  parseFloat(tipData.tip.amount)
+                ).toString(),
+              }
+            : null
+        );
 
         // Show tip notification
         showToast({
-          title: `💰 ${tipData.tip.tipper_wallet.slice(0, 6)}... tipped ${tipData.tip.amount} ETH!`,
-          type: 'success'
-        })
+          title: `💰 ${tipData.tip.tipper_wallet.slice(0, 6)}... tipped ${
+            tipData.tip.amount
+          } ETH!`,
+          type: "success",
+        });
       }
-    })
+    });
 
     streamingService.onStreamEnded((data) => {
       if (data.streamKey === streamKey) {
-        showToast({ title: 'Stream has ended', type: 'info' })
-        setStream(prev => prev ? { ...prev, is_active: false, is_live: false } : null)
-        setIsReceivingContent(false)
+        showToast({ title: "Stream has ended", type: "info" });
+        setStream((prev) =>
+          prev ? { ...prev, is_active: false, is_live: false } : null
+        );
+        setIsReceivingContent(false);
       }
-    })
+    });
 
     return () => {
-      clearInterval(contentCheckInterval)
-      clearInterval(watchTimeInterval)
-      streamingService.leaveStream(streamKey)
-      streamingService.offViewerCountUpdate()
-      streamingService.offNewTip()
-      streamingService.offStreamEnded()
-    }
-  }, [streamKey])
+      clearInterval(contentCheckInterval);
+      clearInterval(watchTimeInterval);
+      streamingService.leaveStream(streamKey);
+      streamingService.offViewerCountUpdate();
+      streamingService.offNewTip();
+      streamingService.offStreamEnded();
+    };
+  }, [streamKey]);
 
   const fetchStream = async () => {
     try {
-      const streamData = await streamingService.getStream(streamKey)
-      console.log('Stream data fetched:', streamData)
-      console.log('HLS URL in stream data:', streamData.hls_url)
-      console.log('User data in stream:', streamData.users)
-      setStream(streamData)
+      const streamData = await streamingService.getStream(streamKey);
+      console.log("Stream data fetched:", streamData);
+      console.log("HLS URL in stream data:", streamData.hls_url);
+      console.log("User data in stream:", streamData.users);
+      setStream(streamData);
     } catch (error) {
-      console.error('Failed to fetch stream:', error)
-      showToast({ title: 'Stream not found', type: 'error' })
-      router.push('/streams')
+      console.error("Failed to fetch stream:", error);
+      showToast({ title: "Stream not found", type: "error" });
+      router.push("/streams");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchTips = async () => {
-    if (!stream?.id) return
+    if (!stream?.id) return;
 
     try {
-      const { tips: streamTips } = await streamingService.getStreamTips(stream.id, 20)
-      setTips(streamTips)
+      const { tips: streamTips } = await streamingService.getStreamTips(
+        stream.id,
+        20
+      );
+      setTips(streamTips);
     } catch (error) {
-      console.error('Failed to fetch tips:', error)
+      console.error("Failed to fetch tips:", error);
     }
-  }
+  };
 
   const shareStream = async () => {
-    const url = `${window.location.origin}/stream/${streamKey}`
+    const url = `${window.location.origin}/stream/${streamKey}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: stream?.title || 'Live Stream',
-          text: `Watch ${stream?.users?.display_name || 'this streamer'} live!`,
-          url: url
-        })
+          title: stream?.title || "Live Stream",
+          text: `Watch ${stream?.users?.display_name || "this streamer"} live!`,
+          url: url,
+        });
       } catch (error) {
         // User cancelled sharing
       }
     } else {
       try {
-        await navigator.clipboard.writeText(url)
-        showToast({ title: 'Stream link copied to clipboard!', type: 'success' })
+        await navigator.clipboard.writeText(url);
+        showToast({
+          title: "Stream link copied to clipboard!",
+          type: "success",
+        });
       } catch (error) {
-        showToast({ title: 'Failed to copy link', type: 'error' })
+        showToast({ title: "Failed to copy link", type: "error" });
       }
     }
-  }
+  };
 
   const toggleFollow = async () => {
     // This would integrate with your existing follow system
-    setIsFollowing(!isFollowing)
+    setIsFollowing(!isFollowing);
     showToast({
-      title: isFollowing ? 'Unfollowed streamer' : 'Now following streamer!',
-      type: 'success'
-    })
-  }
+      title: isFollowing ? "Unfollowed streamer" : "Now following streamer!",
+      type: "success",
+    });
+  };
 
   const sendChatMessage = () => {
-    if (!chatMessage.trim()) return
+    if (!chatMessage.trim()) return;
 
     const newMessage = {
       id: Date.now().toString(),
-      user: 'You', // This would be the current user's name
+      user: "You", // This would be the current user's name
       message: chatMessage.trim(),
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    };
 
-    setChatMessages(prev => [...prev, newMessage])
-    setChatMessage('')
+    setChatMessages((prev) => [...prev, newMessage]);
+    setChatMessage("");
 
     // Here you would emit the message to the socket
     // streamingService.sendChatMessage(streamKey, newMessage)
-  }
+  };
 
   const formatWatchTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const getNFTMilestones = () => {
     return [
-      { time: 300, label: 'Early Bird NFT', icon: '🐦', unlocked: watchTime >= 300 }, // 5 minutes
-      { time: 900, label: 'Dedicated Viewer NFT', icon: '👀', unlocked: watchTime >= 900 }, // 15 minutes
-      { time: 1800, label: 'Loyal Fan NFT', icon: '💎', unlocked: watchTime >= 1800 }, // 30 minutes
-      { time: 3600, label: 'Super Fan NFT', icon: '⭐', unlocked: watchTime >= 3600 }, // 1 hour
-      { time: 7200, label: 'Ultimate Supporter NFT', icon: '👑', unlocked: watchTime >= 7200 } // 2 hours
-    ]
-  }
+      {
+        time: 300,
+        label: "Early Bird NFT",
+        icon: "🐦",
+        unlocked: watchTime >= 300,
+      }, // 5 minutes
+      {
+        time: 900,
+        label: "Dedicated Viewer NFT",
+        icon: "👀",
+        unlocked: watchTime >= 900,
+      }, // 15 minutes
+      {
+        time: 1800,
+        label: "Loyal Fan NFT",
+        icon: "💎",
+        unlocked: watchTime >= 1800,
+      }, // 30 minutes
+      {
+        time: 3600,
+        label: "Super Fan NFT",
+        icon: "⭐",
+        unlocked: watchTime >= 3600,
+      }, // 1 hour
+      {
+        time: 7200,
+        label: "Ultimate Supporter NFT",
+        icon: "👑",
+        unlocked: watchTime >= 7200,
+      }, // 2 hours
+    ];
+  };
 
   if (loading) {
     return (
@@ -237,7 +300,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                   </div>
                   <div className="grid grid-cols-4 gap-4">
                     {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-16 bg-surface-secondary rounded"></div>
+                      <div
+                        key={i}
+                        className="h-16 bg-surface-secondary rounded"
+                      ></div>
                     ))}
                   </div>
                 </Card>
@@ -247,7 +313,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                   <div className="h-5 bg-surface-secondary rounded w-1/2 mb-4"></div>
                   <div className="space-y-3">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-10 bg-surface-secondary rounded"></div>
+                      <div
+                        key={i}
+                        className="h-10 bg-surface-secondary rounded"
+                      ></div>
                     ))}
                   </div>
                 </Card>
@@ -256,7 +325,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!stream) {
@@ -266,13 +335,16 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center">
             <Eye className="w-10 h-10 text-purple-400" />
           </div>
-          <h2 className="text-xl font-semibold mb-3 text-text-primary">Stream Not Found</h2>
+          <h2 className="text-xl font-semibold mb-3 text-text-primary">
+            Stream Not Found
+          </h2>
           <p className="text-text-secondary mb-6">
-            This stream may have ended or the link is invalid. Don't worry, there are plenty of other great streams to watch!
+            This stream may have ended or the link is invalid. Don't worry,
+            there are plenty of other great streams to watch!
           </p>
           <div className="space-y-3">
             <Button
-              onClick={() => router.push('/streams')}
+              onClick={() => router.push("/streams")}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               Browse Live Streams
@@ -287,7 +359,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           </div>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -306,7 +378,9 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           </Button>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-text-primary truncate">{stream.title}</h1>
+            <h1 className="text-2xl font-bold text-text-primary truncate">
+              {stream.title}
+            </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {stream.is_active && stream.is_live && (
                 <Badge variant="destructive" className="animate-pulse text-xs">
@@ -324,7 +398,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 </Badge>
               )}
               {stream.is_active && !isReceivingContent && (
-                <Badge variant="outline" className="border-orange-500 text-orange-500 text-xs">
+                <Badge
+                  variant="outline"
+                  className="border-orange-500 text-orange-500 text-xs"
+                >
                   ⏳ Waiting for OBS
                 </Badge>
               )}
@@ -337,31 +414,40 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={shareStream} className="border-border-primary text-text-secondary hover:text-text-primary">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={shareStream}
+              className="border-border-primary text-text-secondary hover:text-text-primary"
+            >
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
           {/* Main Video Area */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-5 space-y-6">
             {/* Video Player */}
             <Card className="overflow-hidden border-border-primary bg-surface-secondary">
               <div className="relative">
                 {stream.is_active && isReceivingContent ? (
                   <div className="relative w-full">
-                    {stream.hls_url && stream.hls_url.trim() !== '' && !hlsFailed ? (
+                    {stream.hls_url &&
+                    stream.hls_url.trim() !== "" &&
+                    !hlsFailed ? (
                       <VideoPlayer
                         src={stream.hls_url}
                         className="aspect-video w-full"
                         onError={() => {
-                          console.log('HLS error occurred, may fall back to RTMP view')
+                          console.log(
+                            "HLS error occurred, may fall back to RTMP view"
+                          );
                         }}
                         onTimeout={() => {
-                          console.log('HLS timeout, falling back to RTMP view')
-                          setHlsFailed(true)
+                          console.log("HLS timeout, falling back to RTMP view");
+                          setHlsFailed(true);
                         }}
                       />
                     ) : (
@@ -380,11 +466,13 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                     )}
 
                     <div className="text-center text-white p-8 relative z-10">
-                      <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center border ${
-                        stream.is_active && isReceivingContent
-                          ? 'bg-gradient-to-r from-red-600/40 to-purple-600/40 border-red-400/30 animate-pulse'
-                          : 'bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-white/10'
-                      }`}>
+                      <div
+                        className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center border ${
+                          stream.is_active && isReceivingContent
+                            ? "bg-gradient-to-r from-red-600/40 to-purple-600/40 border-red-400/30 animate-pulse"
+                            : "bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-white/10"
+                        }`}
+                      >
                         {stream.is_active && isReceivingContent ? (
                           <div className="relative">
                             <div className="w-4 h-4 bg-red-500 rounded-full animate-ping absolute -top-1 -right-1" />
@@ -399,39 +487,46 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
                       <h3 className="text-xl font-semibold mb-3">
                         {stream.is_active && isReceivingContent
-                          ? '🔴 LIVE STREAM ACTIVE'
+                          ? "🔴 LIVE STREAM ACTIVE"
                           : stream.is_active
-                            ? 'Stream Starting Soon'
-                            : 'Stream Offline'
-                        }
+                          ? "Stream Starting Soon"
+                          : "Stream Offline"}
                       </h3>
 
                       <p className="text-gray-300 mb-4">
                         {stream.is_active && isReceivingContent
                           ? hlsFailed
-                            ? 'The streamer is live! Broadcasting via RTMP protocol.'
-                            : 'The streamer is live and broadcasting! Video transcoding for web playback is being configured.'
+                            ? "The streamer is live! Broadcasting via RTMP protocol."
+                            : "The streamer is live and broadcasting! Video transcoding for web playback is being configured."
                           : stream.is_active
-                            ? 'The streamer is setting up. Stream will begin shortly.'
-                            : 'This stream has ended. Check out other live streams!'}
+                          ? "The streamer is setting up. Stream will begin shortly."
+                          : "This stream has ended. Check out other live streams!"}
                       </p>
 
                       {stream.is_active && isReceivingContent && (
                         <div className="space-y-3">
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                            <span className="text-green-400 text-sm font-medium">Receiving from OBS Studio</span>
+                            <span className="text-green-400 text-sm font-medium">
+                              Receiving from OBS Studio
+                            </span>
                           </div>
-                          <div className={`border rounded-lg p-3 text-sm ${
-                            hlsFailed
-                              ? 'bg-blue-500/20 border-blue-500/30'
-                              : 'bg-green-500/20 border-green-500/30'
-                          }`}>
-                            <p className={hlsFailed ? 'text-blue-200' : 'text-green-200'}>
-                              <strong>Stream Status:</strong> {hlsFailed
-                                ? 'Your OBS is connected and streaming live via RTMP protocol.'
-                                : 'Your OBS is connected and sending video data to the RTMP server. Video transcoding to web format (HLS) will be available in a future update.'
+                          <div
+                            className={`border rounded-lg p-3 text-sm ${
+                              hlsFailed
+                                ? "bg-blue-500/20 border-blue-500/30"
+                                : "bg-green-500/20 border-green-500/30"
+                            }`}
+                          >
+                            <p
+                              className={
+                                hlsFailed ? "text-blue-200" : "text-green-200"
                               }
+                            >
+                              <strong>Stream Status:</strong>{" "}
+                              {hlsFailed
+                                ? "Your OBS is connected and streaming live via RTMP protocol."
+                                : "Your OBS is connected and sending video data to the RTMP server. Video transcoding to web format (HLS) will be available in a future update."}
                             </p>
                           </div>
                         </div>
@@ -440,7 +535,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                       {!stream.is_active && (
                         <Button
                           variant="outline"
-                          onClick={() => router.push('/streams')}
+                          onClick={() => router.push("/streams")}
                           className="border-white/20 text-white hover:bg-white/10"
                         >
                           Browse Live Streams
@@ -453,7 +548,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 {/* Live indicator overlay */}
                 {stream.is_active && stream.is_live && (
                   <div className="absolute top-4 left-4">
-                    <Badge variant="destructive" className="animate-pulse shadow-lg">
+                    <Badge
+                      variant="destructive"
+                      className="animate-pulse shadow-lg"
+                    >
                       🔴 LIVE
                     </Badge>
                   </div>
@@ -506,21 +604,36 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                               alt="Streamer Avatar"
                               className="w-full h-full object-cover rounded-full"
                               onError={(e) => {
-                                console.error('Avatar loading failed for stream:', stream.stream_key, 'IPFS hash:', stream.users?.avatar_ipfs)
-                                e.currentTarget.style.display = 'none'
-                                const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                                if (fallback) fallback.style.display = 'flex'
+                                console.error(
+                                  "Avatar loading failed for stream:",
+                                  stream.stream_key,
+                                  "IPFS hash:",
+                                  stream.users?.avatar_ipfs
+                                );
+                                e.currentTarget.style.display = "none";
+                                const fallback = e.currentTarget
+                                  .nextElementSibling as HTMLElement;
+                                if (fallback) fallback.style.display = "flex";
                               }}
                               onLoad={() => {
-                                console.log('Avatar loaded successfully for stream:', stream.stream_key)
+                                console.log(
+                                  "Avatar loaded successfully for stream:",
+                                  stream.stream_key
+                                );
                               }}
                             />
                           ) : null}
                           <div
                             className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-2xl rounded-full"
-                            style={{ display: stream.users?.avatar_ipfs ? 'none' : 'flex' }}
+                            style={{
+                              display: stream.users?.avatar_ipfs
+                                ? "none"
+                                : "flex",
+                            }}
                           >
-                            {(stream.users?.display_name || stream.users?.username || 'Streamer')[0].toUpperCase()}
+                            {(stream.users?.display_name ||
+                              stream.users?.username ||
+                              "Streamer")[0].toUpperCase()}
                           </div>
                         </div>
                       </div>
@@ -534,9 +647,14 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-2xl font-bold text-text-primary">{stream.title}</h2>
+                        <h2 className="text-2xl font-bold text-text-primary">
+                          {stream.title}
+                        </h2>
                         {stream.is_active && stream.is_live && (
-                          <Badge variant="destructive" className="animate-pulse">
+                          <Badge
+                            variant="destructive"
+                            className="animate-pulse"
+                          >
                             🔴 LIVE
                           </Badge>
                         )}
@@ -544,17 +662,25 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-lg font-semibold text-purple-400">
-                          {stream.users?.display_name || stream.users?.username || 'Anonymous Streamer'}
+                          {stream.users?.display_name ||
+                            stream.users?.username ||
+                            "Anonymous Streamer"}
                         </span>
-                        {stream.users?.username && stream.users?.display_name && (
-                          <span className="text-text-tertiary text-sm">@{stream.users.username}</span>
-                        )}
+                        {stream.users?.username &&
+                          stream.users?.display_name && (
+                            <span className="text-text-tertiary text-sm">
+                              @{stream.users.username}
+                            </span>
+                          )}
                       </div>
 
                       {stream.game_name && (
                         <div className="flex items-center gap-2 mb-2">
                           <Gamepad2 className="w-4 h-4 text-purple-400" />
-                          <Badge variant="secondary" className="text-xs bg-purple-600/20 text-purple-300 border-purple-500/30">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-purple-600/20 text-purple-300 border-purple-500/30"
+                          >
                             {stream.game_name}
                           </Badge>
                         </div>
@@ -562,7 +688,8 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
                       {/* Stream description */}
                       <p className="text-text-secondary text-sm">
-                        {stream.description || "Live streaming on Zapp - Web3's premier streaming platform! 🎮✨"}
+                        {stream.description ||
+                          "Live streaming on Zapp - Web3's premier streaming platform! 🎮✨"}
                       </p>
                     </div>
                   </div>
@@ -572,25 +699,50 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                       variant={isFollowing ? "default" : "outline"}
                       size="sm"
                       onClick={toggleFollow}
-                      className={`${isFollowing ? 'bg-purple-600 hover:bg-purple-700' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}
+                      className={`${
+                        isFollowing
+                          ? "bg-purple-600 hover:bg-purple-700"
+                          : "border-border-primary text-text-secondary hover:text-text-primary"
+                      }`}
                     >
-                      <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
-                      {isFollowing ? 'Following' : 'Follow'}
+                      <Heart
+                        className={`w-4 h-4 mr-2 ${
+                          isFollowing ? "fill-current" : ""
+                        }`}
+                      />
+                      {isFollowing ? "Following" : "Follow"}
                     </Button>
 
-                    <Button
-                      size="sm"
-                      onClick={() => setShowTipModal(true)}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-md"
-                    >
-                      <Gift className="w-4 h-4 mr-2" />
-                      Send Tip
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowNitroliteModal(true)}
+                        className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-md text-white font-semibold flex-1"
+                      >
+                        <DollarSign className="w-4 h-4 mr-1" />⚡ Nitrolite Tips
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowTipModal(true)}
+                        className="border-green-600/50 text-green-400 hover:bg-green-600/10 flex-1"
+                      >
+                        <Gift className="w-4 h-4 mr-1" />
+                        Classic Tip
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Stream Stats */}
-                <div className={`grid gap-4 p-4 bg-background-primary rounded-lg border border-border-secondary mb-6 ${stream.is_active ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                <div
+                  className={`grid gap-4 p-4 bg-background-primary rounded-lg border border-border-secondary mb-6 ${
+                    stream.is_active
+                      ? "grid-cols-2 sm:grid-cols-5"
+                      : "grid-cols-2 sm:grid-cols-4"
+                  }`}
+                >
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-purple-400 mb-1">
                       <Users className="w-4 h-4" />
@@ -628,9 +780,11 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                       <Eye className="w-4 h-4" />
                     </div>
                     <div className="text-lg font-semibold text-text-primary">
-                      {stream.is_active && stream.is_live ? 'LIVE' : 'OFFLINE'}
+                      {stream.is_active && stream.is_live ? "LIVE" : "OFFLINE"}
                     </div>
-                    <div className="text-xs text-text-tertiary">Stream Status</div>
+                    <div className="text-xs text-text-tertiary">
+                      Stream Status
+                    </div>
                   </div>
 
                   {stream.is_active && (
@@ -642,10 +796,18 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                           <div className="w-4 h-4 text-orange-400">⏳</div>
                         )}
                       </div>
-                      <div className={`text-lg font-semibold ${isReceivingContent ? 'text-green-400' : 'text-orange-400'}`}>
-                        {isReceivingContent ? 'RECEIVING' : 'WAITING'}
+                      <div
+                        className={`text-lg font-semibold ${
+                          isReceivingContent
+                            ? "text-green-400"
+                            : "text-orange-400"
+                        }`}
+                      >
+                        {isReceivingContent ? "RECEIVING" : "WAITING"}
                       </div>
-                      <div className="text-xs text-text-tertiary">OBS Status</div>
+                      <div className="text-xs text-text-tertiary">
+                        OBS Status
+                      </div>
                     </div>
                   )}
                 </div>
@@ -670,7 +832,9 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                     <div className="w-full bg-background-primary rounded-full h-3 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-purple-500 to-blue-500 h-full transition-all duration-1000 ease-out"
-                        style={{ width: `${Math.min((watchTime / 7200) * 100, 100)}%` }}
+                        style={{
+                          width: `${Math.min((watchTime / 7200) * 100, 100)}%`,
+                        }}
                       />
                     </div>
 
@@ -681,13 +845,22 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                           key={index}
                           className={`w-4 h-4 rounded-full border-2 -mt-0.5 relative ${
                             milestone.unlocked
-                              ? 'bg-green-500 border-green-400'
-                              : 'bg-gray-600 border-gray-500'
+                              ? "bg-green-500 border-green-400"
+                              : "bg-gray-600 border-gray-500"
                           }`}
-                          style={{ left: `${(milestone.time / 7200) * 100}%`, transform: 'translateX(-50%)' }}
+                          style={{
+                            left: `${(milestone.time / 7200) * 100}%`,
+                            transform: "translateX(-50%)",
+                          }}
                         >
                           <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap">
-                            <span className={milestone.unlocked ? 'text-green-400' : 'text-gray-500'}>
+                            <span
+                              className={
+                                milestone.unlocked
+                                  ? "text-green-400"
+                                  : "text-gray-500"
+                              }
+                            >
                               {milestone.icon}
                             </span>
                           </div>
@@ -703,20 +876,22 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                         key={index}
                         className={`relative p-4 rounded-xl border-2 text-center transition-all transform hover:scale-105 ${
                           milestone.unlocked
-                            ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-400/60 text-green-300 shadow-lg shadow-green-500/20'
-                            : 'bg-gradient-to-br from-gray-700/10 to-gray-800/10 border-gray-600/30 text-gray-400 hover:border-gray-500/50'
+                            ? "bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-400/60 text-green-300 shadow-lg shadow-green-500/20"
+                            : "bg-gradient-to-br from-gray-700/10 to-gray-800/10 border-gray-600/30 text-gray-400 hover:border-gray-500/50"
                         }`}
                       >
                         {/* Achievement Icon */}
-                        <div className={`text-2xl mb-2 transition-transform ${
-                          milestone.unlocked ? 'animate-bounce' : ''
-                        }`}>
+                        <div
+                          className={`text-2xl mb-2 transition-transform ${
+                            milestone.unlocked ? "animate-bounce" : ""
+                          }`}
+                        >
                           {milestone.icon}
                         </div>
 
                         {/* Achievement Info */}
                         <div className="text-xs font-semibold mb-1 leading-tight">
-                          {milestone.label.replace(' NFT', '')}
+                          {milestone.label.replace(" NFT", "")}
                         </div>
                         <div className="text-xs opacity-75 mb-2">
                           {Math.floor(milestone.time / 60)}min
@@ -727,7 +902,12 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                           <div className="w-full bg-gray-700/30 rounded-full h-1.5 mb-2">
                             <div
                               className="bg-purple-500 h-1.5 rounded-full transition-all duration-500"
-                              style={{ width: `${Math.min((watchTime / milestone.time) * 100, 100)}%` }}
+                              style={{
+                                width: `${Math.min(
+                                  (watchTime / milestone.time) * 100,
+                                  100
+                                )}%`,
+                              }}
                             />
                           </div>
                         )}
@@ -737,13 +917,19 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                           <Button
                             size="sm"
                             className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-xs h-7 rounded-lg shadow-sm"
-                            onClick={() => showToast({ title: `${milestone.label} ready to mint! 🎉`, type: 'success' })}
+                            onClick={() =>
+                              showToast({
+                                title: `${milestone.label} ready to mint! 🎉`,
+                                type: "success",
+                              })
+                            }
                           >
                             Mint NFT
                           </Button>
                         ) : (
                           <div className="w-full text-xs text-gray-500 h-7 flex items-center justify-center">
-                            {Math.floor((milestone.time - watchTime) / 60)}m left
+                            {Math.floor((milestone.time - watchTime) / 60)}m
+                            left
                           </div>
                         )}
 
@@ -757,11 +943,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 </div>
               </Card>
             )}
-
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:col-span-2 ">
             {/* Live Chat - Twitch Style */}
             <Card className="border-border-primary bg-surface-secondary">
               <div className="h-[500px] flex flex-col">
@@ -779,7 +964,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
                   {chatMessages.length > 0 ? (
                     chatMessages.map((msg) => (
-                      <div key={msg.id} className="flex items-start gap-3 px-2 py-2 hover:bg-background-primary/30 rounded-md text-sm transition-colors">
+                      <div
+                        key={msg.id}
+                        className="flex items-start gap-3 px-2 py-2 hover:bg-background-primary/30 rounded-md text-sm transition-colors"
+                      >
                         {/* User Avatar - Larger and cleaner */}
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                           {msg.user[0].toUpperCase()}
@@ -806,49 +994,70 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                       <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full flex items-center justify-center">
                         💬
                       </div>
-                      <h4 className="font-medium text-text-primary mb-2">No messages yet</h4>
-                      <p className="text-sm text-text-secondary">Be the first to start the conversation!</p>
+                      <h4 className="font-medium text-text-primary mb-2">
+                        No messages yet
+                      </h4>
+                      <p className="text-sm text-text-secondary">
+                        Be the first to start the conversation!
+                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* Chat Input - Improved layout */}
-                <div className="p-4 border-t border-border-secondary bg-background-primary/30">
-                  <div className="flex gap-3 items-end">
+                {/* Chat Input - Fixed responsive layout */}
+                <div className="p-3 border-t border-border-secondary bg-background-primary/30">
+                  <div className="flex items-center gap-2">
                     {/* Current user avatar for input */}
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mb-1">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       <img
                         src="https://github.com/identicons/jasonlong.png"
                         alt="Your avatar"
                         className="w-full h-full rounded-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement
-                          if (fallback) fallback.style.display = 'flex'
+                          e.currentTarget.style.display = "none";
+                          const fallback = e.currentTarget
+                            .nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = "flex";
                         }}
                       />
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold rounded-full" style={{ display: 'none' }}>
+                      <div
+                        className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold rounded-full"
+                        style={{ display: "none" }}
+                      >
                         ZP
                       </div>
                     </div>
 
-                    <div className="flex-1 flex gap-2">
+                    {/* Input container - properly constrained */}
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
                       <input
                         type="text"
                         value={chatMessage}
                         onChange={(e) => setChatMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && sendChatMessage()
+                        }
                         placeholder="Say something nice..."
-                        className="flex-1 px-4 py-2 bg-background-primary border border-border-secondary rounded-full text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition-all"
+                        className="flex-1 min-w-0 px-3 py-2 bg-background-primary border border-border-secondary rounded-lg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition-all"
                       />
                       <Button
                         onClick={sendChatMessage}
                         disabled={!chatMessage.trim()}
                         size="sm"
-                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-4 shadow-sm transition-all hover:shadow-md disabled:opacity-50"
+                        className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-3 py-2 shadow-sm transition-all hover:shadow-md disabled:opacity-50 flex-shrink-0"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                          />
                         </svg>
                       </Button>
                     </div>
@@ -875,11 +1084,19 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
 
                   <Button
                     variant={isFollowing ? "default" : "outline"}
-                    className={`w-full ${isFollowing ? 'bg-purple-600 hover:bg-purple-700' : 'border-border-primary text-text-secondary hover:text-text-primary'}`}
+                    className={`w-full ${
+                      isFollowing
+                        ? "bg-purple-600 hover:bg-purple-700"
+                        : "border-border-primary text-text-secondary hover:text-text-primary"
+                    }`}
                     onClick={toggleFollow}
                   >
-                    <Heart className={`w-4 h-4 mr-2 ${isFollowing ? 'fill-current' : ''}`} />
-                    {isFollowing ? 'Following' : 'Follow'}
+                    <Heart
+                      className={`w-4 h-4 mr-2 ${
+                        isFollowing ? "fill-current" : ""
+                      }`}
+                    />
+                    {isFollowing ? "Following" : "Follow"}
                   </Button>
 
                   <Button
@@ -910,7 +1127,10 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                 {tips.length > 0 ? (
                   <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
                     {tips.map((tip) => (
-                      <div key={tip.id} className="bg-background-primary border border-border-secondary rounded-lg p-3">
+                      <div
+                        key={tip.id}
+                        className="bg-background-primary border border-border-secondary rounded-lg p-3"
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-green-400 text-sm">
                             💰 {tip.amount} ETH
@@ -920,7 +1140,11 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                           </span>
                         </div>
                         <div className="text-text-secondary text-sm mb-1">
-                          From: <span className="font-mono text-purple-400">{tip.tipper_wallet.slice(0, 6)}...{tip.tipper_wallet.slice(-4)}</span>
+                          From:{" "}
+                          <span className="font-mono text-purple-400">
+                            {tip.tipper_wallet.slice(0, 6)}...
+                            {tip.tipper_wallet.slice(-4)}
+                          </span>
                         </div>
                         {tip.message && (
                           <div className="text-text-primary text-sm mt-2 p-2 bg-surface-secondary rounded italic border-l-2 border-green-400">
@@ -935,15 +1159,29 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
                     <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-full flex items-center justify-center">
                       <Gift className="w-6 h-6 text-green-400" />
                     </div>
-                    <h4 className="font-medium text-text-primary mb-2">No tips yet</h4>
-                    <p className="text-sm text-text-secondary mb-3">Be the first to show your support!</p>
-                    <Button
-                      size="sm"
-                      onClick={() => setShowTipModal(true)}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                    >
-                      Send First Tip
-                    </Button>
+                    <h4 className="font-medium text-text-primary mb-2">
+                      No tips yet
+                    </h4>
+                    <p className="text-sm text-text-secondary mb-3">
+                      Be the first to show your support!
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowNitroliteModal(true)}
+                        className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold"
+                      >
+                        ⚡ Nitrolite Tips
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowTipModal(true)}
+                        className="border-green-600/50 text-green-400 hover:bg-green-600/10"
+                      >
+                        Classic Tip
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -952,7 +1190,7 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
         </div>
       </div>
 
-      {/* Tip Modal */}
+      {/* Classic Tip Modal */}
       {showTipModal && (
         <TipModal
           isOpen={showTipModal}
@@ -960,6 +1198,23 @@ export default function StreamPage({ streamKey }: StreamPageProps) {
           stream={stream}
         />
       )}
+
+      {/* Nitrolite Universal Tip Modal */}
+      {showNitroliteModal && (
+        <NitroliteUniversalTipModal
+          isOpen={showNitroliteModal}
+          onClose={() => setShowNitroliteModal(false)}
+          context="streaming"
+          stream={stream}
+        />
+      )}
+
+      {/* Yellow Network Real-time Notifications */}
+      <YellowTipNotifications />
+      <LiveTipCounter />
+
+      {/* Debug Component - Development Only */}
+      <WalletDebugger stream={stream} />
     </div>
-  )
+  );
 }

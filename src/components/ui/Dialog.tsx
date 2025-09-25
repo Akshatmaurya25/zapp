@@ -37,7 +37,7 @@ interface DialogContentProps {
 export function DialogContent({ children, className }: DialogContentProps) {
   return (
     <div className={cn(
-      'bg-gray-950/95 border border-gray-700/80 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto backdrop-blur-xl',
+      'bg-gray-950 border border-gray-700 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto backdrop-blur-xl',
       className
     )}>
       {children}
@@ -68,6 +68,19 @@ export function DialogTitle({ children, className }: DialogTitleProps) {
     <h2 className={cn('text-lg font-semibold text-gray-200', className)}>
       {children}
     </h2>
+  )
+}
+
+interface DialogDescriptionProps {
+  children: React.ReactNode
+  className?: string
+}
+
+export function DialogDescription({ children, className }: DialogDescriptionProps) {
+  return (
+    <p className={cn('text-sm text-gray-400 mt-2', className)}>
+      {children}
+    </p>
   )
 }
 

@@ -1,0 +1,11 @@
+{
+  "network": "somnia-testnet",
+  "chainId": "50312",
+  "contracts": {
+    "custody": "0xCDAE6fBf9faCAba887C0c0e65ba3d9b47b4B7C03",
+    "adjudicator": "0x2037f60A1FeBbEe93fE8Ebc1deA972346630FB08"
+  },
+  "deployer": "0xE81032A865Dd45BF39E8430f72b9FA8f2e2Cb030",
+  "deployedAt": "2025-09-24T19:58:29.559Z",
+  "blockNumber": 184997807
+}
